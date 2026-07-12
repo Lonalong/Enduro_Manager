@@ -417,8 +417,77 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 </style>
 </head>
 <body>
+<!-- SIGN-IN SCREEN -->
+<div id="authScreen" style="display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;gap:40px;flex-wrap:wrap">
+  <div style="flex:0 0 auto;width:360px;pointer-events:none">
+    <style>#previewCard .rp-npb, #previewCard .rp-npb-del{font-size:14px !important}</style>
+    <div class="rp-card rp-now" id="previewCard">
+      <div class="rp-card-hdr">
+        <span class="rp-now-pill">NOW</span>
+        <span class="rp-stint-lbl" style="color:#4f8ef7">Stint 2</span>
+      </div>
+      <div class="rp-card-body">
+        <div class="rp-cols rp-narrow">
+          <div class="rp-col rp-col-pit">
+            <div class="rp-col-lbl">Laps to run</div>
+            <div class="rp-pw-val" style="font-size:32px">11</div>
+            <div class="rp-pw-sub">laps</div>
+          </div>
+          <div class="rp-col rp-col-fueladd" style="justify-content:flex-start">
+            <div class="rp-add-lbl">Fuel on board</div>
+            <div><span class="rp-add-val" style="font-size:28px">49.3</span><span class="rp-add-unit"> L</span></div>
+            <div class="rp-est-laps">Est. <span class="rp-est-laps-n">18</span> laps</div>
+          </div>
+          <div class="rp-col" style="flex-direction:row;align-items:flex-start;gap:16px;padding-top:16px;justify-content:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;flex-shrink:0">
+              <div class="rp-donut-lbl" style="white-space:nowrap">Tread start</div>
+              <svg width="64" height="64" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44" fill="none" stroke="var(--s2)" stroke-width="8"/><circle cx="48" cy="48" r="44" fill="none" stroke="#3ecf8e" stroke-width="8" stroke-dasharray="248.9 27.7" stroke-dashoffset="69.1" stroke-linecap="round"/><text x="48" y="48" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="700" fill="#3ecf8e" font-family="monospace">95%</text></svg>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;flex-shrink:0">
+              <div class="rp-donut-lbl" style="white-space:nowrap">Tread end</div>
+              <svg width="64" height="64" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44" fill="none" stroke="var(--s2)" stroke-width="8"/><circle cx="48" cy="48" r="44" fill="none" stroke="#3ecf8e" stroke-width="8" stroke-dasharray="230.6 46" stroke-dashoffset="69.1" stroke-linecap="round"/><text x="48" y="48" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="700" fill="#3ecf8e" font-family="monospace">88%</text></svg>
+            </div>
+          </div>
+        </div>
+        <div class="rp-cols rp-narrow" style="border-top:1px solid var(--bd)">
+          <div class="rp-col rp-col-numpad" style="display:flex;flex-direction:column">
+            <div class="rp-col-lbl">Actual pit lap</div>
+            <div class="rp-np-display pit-col" style="font-size:22px;padding:6px 10px;margin-bottom:6px"><span>18</span><span class="rp-np-unit"> lap</span></div>
+            <div class="rp-numpad" style="grid-auto-rows:34px">
+              <button class="rp-npb">7</button><button class="rp-npb">8</button><button class="rp-npb">9</button>
+              <button class="rp-npb">4</button><button class="rp-npb">5</button><button class="rp-npb">6</button>
+              <button class="rp-npb">1</button><button class="rp-npb">2</button><button class="rp-npb">3</button>
+              <div></div><button class="rp-npb">0</button><button class="rp-npb-del">&#9003;</button>
+            </div>
+          </div>
+          <div class="rp-col rp-col-numpad" style="display:flex;flex-direction:column">
+            <div class="rp-col-lbl">Fuel in car</div>
+            <div class="rp-np-display fuel-col" style="font-size:22px;padding:6px 10px;margin-bottom:6px"><span>49.3</span><span class="rp-np-unit"> L</span></div>
+            <div class="rp-numpad" style="grid-auto-rows:34px">
+              <button class="rp-npb">7</button><button class="rp-npb">8</button><button class="rp-npb">9</button>
+              <button class="rp-npb">4</button><button class="rp-npb">5</button><button class="rp-npb">6</button>
+              <button class="rp-npb">1</button><button class="rp-npb">2</button><button class="rp-npb">3</button>
+              <div></div><button class="rp-npb">0</button><button class="rp-npb-del">&#9003;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="width:100%;max-width:340px;text-align:center">
+    <div style="font-size:20px;font-weight:600;margin-bottom:4px">Endurance Racing Planner</div>
+    <div style="font-size:13px;color:var(--mu);margin-bottom:24px">Sign in to sync your races across devices</div>
+    <div id="authFormWrap">
+      <input type="email" id="authEmailInput" placeholder="you@example.com" autocomplete="email"
+        style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:14px;margin-bottom:10px">
+      <button id="authSendBtn" class="hs-new-btn" style="width:100%;justify-content:center">Send sign-in link</button>
+      <div id="authStatusMsg" style="font-size:12px;color:var(--mu);margin-top:12px;min-height:16px"></div>
+    </div>
+  </div>
+</div>
+
 <!-- HOME SCREEN -->
-<div id="homeScreen">
+<div id="homeScreen" style="display:none">
   <div class="hs-header">
     <div>
       <div class="hs-title">Endurance Racing Planner</div>
@@ -4103,6 +4172,75 @@ function getSB() {
   return _sb;
 }
 
+// ========== AUTH ==========
+async function sendMagicLink(email) {
+  var sb = getSB();
+  if (!sb) return { error: 'Client not ready, try again' };
+  var res = await sb.auth.signInWithOtp({
+    email: email,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+  });
+  return res;
+}
+
+function showAuthScreen() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('raceApp').style.display = 'none';
+}
+
+function hideAuthScreen() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('homeScreen').style.display = '';
+}
+
+async function checkAuthAndInit() {
+  var sb = getSB();
+  if (!sb) { showAuthScreen(); return; }
+  var { data } = await sb.auth.getSession();
+  if (data && data.session) {
+    hideAuthScreen();
+    initCloudSync();
+  } else {
+    showAuthScreen();
+  }
+  sb.auth.onAuthStateChange(function(event, session) {
+    if (session) {
+      hideAuthScreen();
+      initCloudSync();
+    } else {
+      showAuthScreen();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('authSendBtn');
+  var input = document.getElementById('authEmailInput');
+  var msg = document.getElementById('authStatusMsg');
+  if (!btn) return;
+  btn.addEventListener('click', async function() {
+    var email = (input.value || '').trim();
+    if (!email || email.indexOf('@') === -1) {
+      msg.textContent = 'Enter a valid email address';
+      msg.style.color = '#f75f5f';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    var res = await sendMagicLink(email);
+    btn.disabled = false;
+    btn.textContent = 'Send sign-in link';
+    if (res && res.error) {
+      msg.textContent = 'Error: ' + res.error.message;
+      msg.style.color = '#f75f5f';
+    } else {
+      msg.textContent = 'Check your email for a sign-in link.';
+      msg.style.color = '#3ecf8e';
+    }
+  });
+});
+
 function setSyncStatus(status) {
   _syncStatus = status;
   var el = document.getElementById('syncStatusDot');
@@ -4689,8 +4827,7 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
 // ========== END FUJI DEFAULT RACE ==========
 
 renderHomeScreen();
-initCloudSync();
-startRealtimeSync();
+checkAuthAndInit();
 // ========== END MULTI-RACE MANAGER ==========
 
 
