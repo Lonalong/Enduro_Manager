@@ -298,7 +298,13 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   .tab-btn{padding:10px 10px;font-size:10px;letter-spacing:.06em;white-space:nowrap}
   .tab-back-btn{padding:10px 8px;font-size:10px;white-space:nowrap}
   .race-name-display{font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* hide desktop-only tab content on mobile — mobile renders its own */
+  /* hide desktop-only tab content on mobile — mobile renders its own.
+     The mob-hide class exists but was never applied to any element, so
+     desktop content rendered in full above the mobile-injected content,
+     requiring a scroll to reach it. This rule hides every direct child
+     of a tab-page except the mobile-injected containers (mobCrew,
+     mobStrat, mobRace), which share the same parent element. */
+  .tab-page.active > *:not(#mobCrew):not(#mobStrat):not(#mobRace){display:none !important}
   .mob-hide{display:none !important}
   /* mob sections */
   .mob-sec{border-bottom:1px solid var(--bd)}
