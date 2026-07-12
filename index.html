@@ -284,7 +284,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .race-name-display{font-size:11px;color:var(--ac);letter-spacing:.06em;padding:10px 0 10px 4px;margin-bottom:-1px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 
 /* ========== MOBILE RESPONSIVE ========== */
-@media (max-width: 600px) {
+@media (max-width: 600px), (max-height: 600px) and (orientation: landscape) {
   body{padding:0}
   #homeScreen{padding:10px}
   .hs-header{flex-wrap:wrap;gap:8px}
@@ -293,6 +293,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   .hs-grid{grid-template-columns:1fr 1fr;grid-auto-rows:auto;gap:10px}
   .hs-card-name{font-size:14px;cursor:default}
   .hs-card-meta{font-size:11px}
+  #hsNewBtn{display:none}
   .tab-nav{overflow-x:auto;flex-wrap:nowrap}
   .tab-btn{padding:10px 10px;font-size:10px;letter-spacing:.06em;white-space:nowrap}
   .tab-back-btn{padding:10px 8px;font-size:10px;white-space:nowrap}
@@ -4345,7 +4346,17 @@ async function syncSaveNow(id, data) {
   if (!sb) return;
   setSyncStatus('syncing');
   try {
-    var payload = { id: id, data: data, updated_at: new Date().toISOString() };
+    var userRes = await sb.auth.getUser();
+    var uid = userRes && userRes.data && userRes.data.user ? userRes.data.user.id : null;
+    if (!uid) throw { message: 'Not signed in', code: 'no_session' };
+    // Always stamp the current user's id explicitly — relying on the
+    // column DEFAULT only works on first insert. An upsert on a race
+    // that already has a different (or null) user_id, e.g. from before
+    // Google sign-in existed, keeps that old value and gets silently
+    // rejected by RLS with a 42501 error. Sending user_id here makes
+    // every save self-healing: it re-claims the row for whoever's
+    // currently signed in and saving.
+    var payload = { id: id, data: data, updated_at: new Date().toISOString(), user_id: uid };
     var res = await sb.from('races').upsert(payload, { onConflict: 'id' });
     if (res.error) throw res.error;
     setSyncStatus('online');
@@ -4703,7 +4714,9 @@ function renderHomeScreen() {
   var grid = g('hsGrid');
   if (!grid) return;
   if (idx.length === 0) {
-    grid.innerHTML = '<div class="hs-empty"><div class="hs-empty-big">&#127937;</div>No races yet.<br>Click <b>+ New Race</b> to get started.</div>';
+    grid.innerHTML = isMobile()
+      ? '<div class="hs-empty"><div class="hs-empty-big">&#127937;</div>No races yet.<br>Create one on desktop \u2014 it will sync here automatically.</div>'
+      : '<div class="hs-empty"><div class="hs-empty-big">&#127937;</div>No races yet.<br>Click <b>+ New Race</b> to get started.</div>';
     return;
   }
   var accentColors = ['#4f8ef7','#3ecf8e','#f7934f','#c97bf7','#f75f9a','#5fd8f7','#f7d44f'];
@@ -4851,7 +4864,14 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
   // sync brings down from desktop. If desktop has no races, mobile stays empty
   // too (initCloudSync will populate it if/when the cloud actually has data).
   if (isMobile()) return;
-  var id = 'fuji_6h_2025';
+  // Each device/user gets its own unique id for the seed race — a shared
+  // hardcoded id (e.g. always "fuji_6h_2025") would mean the first person
+  // to ever edit it "claims" that row in Supabase, and every other new
+  // user's seed race would collide with it on sync, permanently rejected
+  // by RLS (row already owned by someone else) with no way to fix it
+  // themselves. A unique id per seeding means every user's copy is a
+  // genuinely separate row, so it can sync to the cloud without conflict.
+  var id = 'fuji_6h_2025_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   idx.push({ id: id, name: 'Fuji 6H Endurance', track: 'Fuji Speedway', date: '2026-09-27', duration: '6h 0m 0s' });
   saveRaceIndex(idx);
 
@@ -4912,7 +4932,11 @@ checkAuthAndInit();
 
 
 // ========== MOBILE RENDER LAYER ==========
-function isMobile(){return window.innerWidth<=600;}
+// Uses the smaller of width/height so a phone rotated to landscape (where
+// width temporarily exceeds 600px) is still correctly detected as mobile —
+// its short dimension stays phone-sized regardless of orientation, unlike
+// a real desktop window which has no small dimension at all.
+function isMobile(){return Math.min(window.innerWidth, window.innerHeight)<=600;}
 function mobClear(id){var el=g(id);if(el)el.remove();}
 
 // ── SHARED MOBILE CSS injected once ──────────────────────────
