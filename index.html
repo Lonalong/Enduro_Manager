@@ -4191,25 +4191,40 @@ function showAuthScreen() {
 
 function hideAuthScreen() {
   document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('homeScreen').style.display = '';
+  // Only reveal the home screen if a race isn't already open — Supabase
+  // re-validates the session (and re-fires this) on tab focus, and we
+  // don't want that to yank the user back to the home screen mid-race.
+  var raceAppEl = document.getElementById('raceApp');
+  var raceIsOpen = raceAppEl && raceAppEl.style.display !== 'none';
+  if (!raceIsOpen) {
+    document.getElementById('homeScreen').style.display = '';
+  }
 }
 
 async function checkAuthAndInit() {
   var sb = getSB();
   if (!sb) { showAuthScreen(); return; }
   var { data } = await sb.auth.getSession();
+  var alreadyInitialized = false;
   if (data && data.session) {
     hideAuthScreen();
     initCloudSync();
+    alreadyInitialized = true;
   } else {
     showAuthScreen();
   }
   sb.auth.onAuthStateChange(function(event, session) {
     if (session) {
       hideAuthScreen();
-      initCloudSync();
+      // Supabase re-fires this on tab focus to revalidate the session —
+      // only run the (heavier) cloud sync bootstrap once per real sign-in.
+      if (!alreadyInitialized) {
+        initCloudSync();
+        alreadyInitialized = true;
+      }
     } else {
       showAuthScreen();
+      alreadyInitialized = false;
     }
   });
 }
