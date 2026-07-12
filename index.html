@@ -476,11 +476,16 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   </div>
   <div style="width:100%;max-width:340px;text-align:center">
     <div style="font-size:20px;font-weight:600;margin-bottom:4px">Endurance Racing Planner</div>
-    <div style="font-size:13px;color:var(--mu);margin-bottom:24px">Sign in to sync your races across devices</div>
+    <div style="font-size:13px;color:var(--mu);margin-bottom:24px">Sign in to save your races to the cloud and access them from any device</div>
     <div id="authFormWrap">
-      <input type="email" id="authEmailInput" placeholder="you@example.com" autocomplete="email"
-        style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:14px;margin-bottom:10px">
-      <button id="authSendBtn" class="hs-new-btn" style="width:100%;justify-content:center">Send sign-in link</button>
+      <button id="authGoogleBtn" type="button" style="width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:14px;cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.56 2.7-3.87 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.98v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.66 9c0-.59.1-1.16.29-1.7V4.96H.98A9 9 0 0 0 0 9c0 1.45.35 2.83.98 4.04l2.97-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .98 4.96l2.97 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+        Continue with Google
+      </button>
+      <button id="authGuestBtn" type="button" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-top:10px;border-radius:8px;border:none;background:transparent;color:var(--mu);font-size:12px;cursor:pointer;text-decoration:underline">
+        Continue without an account
+      </button>
+      <div style="font-size:11px;color:var(--mu);margin-top:6px;line-height:1.5">Races are only saved locally on this device without sign in.</div>
       <div id="authStatusMsg" style="font-size:12px;color:var(--mu);margin-top:12px;min-height:16px"></div>
     </div>
   </div>
@@ -494,6 +499,8 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div class="hs-sub">Fuel strategy &bull; Tyre wear &bull; Pit windows &bull; Driver allocation</div>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
+      <button id="hsGuestSignInBtn" style="display:none;background:none;border:1px solid var(--bd);border-radius:5px;color:var(--ac);font-family:inherit;font-size:11px;padding:5px 10px;cursor:pointer">Sign in to sync</button>
+      <button id="hsLogoutBtn" style="display:none;background:none;border:1px solid var(--bd);border-radius:5px;color:var(--mu);font-family:inherit;font-size:11px;padding:5px 10px;cursor:pointer">Log out</button>
       <div style="display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)">
         <div id="syncStatusDot" style="width:7px;height:7px;border-radius:50%;background:#6b7194;flex-shrink:0;transition:background .3s"></div>
         <span id="syncStatusLbl">Connecting&hellip;</span>
@@ -4173,14 +4180,46 @@ function getSB() {
 }
 
 // ========== AUTH ==========
-async function sendMagicLink(email) {
+var GUEST_MODE_KEY = 'erp_guest_mode';
+
+function isGuestMode() {
+  return localStorage.getItem(GUEST_MODE_KEY) === '1';
+}
+
+function enterGuestMode() {
+  localStorage.setItem(GUEST_MODE_KEY, '1');
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('homeScreen').style.display = '';
+  var guestSignInBtn = document.getElementById('hsGuestSignInBtn');
+  if (guestSignInBtn) {
+    guestSignInBtn.style.display = '';
+    guestSignInBtn.onclick = function() {
+      localStorage.removeItem(GUEST_MODE_KEY);
+      showAuthScreen();
+    };
+  }
+  var logoutBtn = document.getElementById('hsLogoutBtn');
+  if (logoutBtn) logoutBtn.style.display = 'none';
+  renderHomeScreen();
+  // No cloud sync in guest mode — races stay local-only to this browser
+  // until the person signs in.
+  setSyncStatus('local');
+}
+
+async function logOut() {
   var sb = getSB();
-  if (!sb) return { error: 'Client not ready, try again' };
-  var res = await sb.auth.signInWithOtp({
-    email: email,
-    options: { emailRedirectTo: window.location.origin + window.location.pathname }
-  });
-  return res;
+  if (sb) {
+    if (_realtimeChannel) {
+      sb.removeChannel(_realtimeChannel);
+      _realtimeChannel = null;
+    }
+    await sb.auth.signOut();
+  }
+  localStorage.removeItem(GUEST_MODE_KEY);
+  // signOut() fires onAuthStateChange with no session, which already
+  // shows the auth screen — this is just a safety net in case that
+  // listener hasn't fired yet.
+  showAuthScreen();
 }
 
 function showAuthScreen() {
@@ -4191,6 +4230,10 @@ function showAuthScreen() {
 
 function hideAuthScreen() {
   document.getElementById('authScreen').style.display = 'none';
+  var guestSignInBtn = document.getElementById('hsGuestSignInBtn');
+  if (guestSignInBtn) guestSignInBtn.style.display = 'none';
+  var logoutBtn = document.getElementById('hsLogoutBtn');
+  if (logoutBtn) logoutBtn.style.display = '';
   // Only reveal the home screen if a race isn't already open — Supabase
   // re-validates the session (and re-fires this) on tab focus, and we
   // don't want that to yank the user back to the home screen mid-race.
@@ -4203,18 +4246,26 @@ function hideAuthScreen() {
 
 async function checkAuthAndInit() {
   var sb = getSB();
-  if (!sb) { showAuthScreen(); return; }
+  if (!sb) {
+    if (isGuestMode()) { enterGuestMode(); } else { showAuthScreen(); }
+    return;
+  }
   var { data } = await sb.auth.getSession();
   var alreadyInitialized = false;
   if (data && data.session) {
+    // A real sign-in always takes priority over a stale guest-mode flag.
+    localStorage.removeItem(GUEST_MODE_KEY);
     hideAuthScreen();
     initCloudSync();
     alreadyInitialized = true;
+  } else if (isGuestMode()) {
+    enterGuestMode();
   } else {
     showAuthScreen();
   }
   sb.auth.onAuthStateChange(function(event, session) {
     if (session) {
+      localStorage.removeItem(GUEST_MODE_KEY);
       hideAuthScreen();
       // Supabase re-fires this on tab focus to revalidate the session —
       // only run the (heavier) cloud sync bootstrap once per real sign-in.
@@ -4222,7 +4273,7 @@ async function checkAuthAndInit() {
         initCloudSync();
         alreadyInitialized = true;
       }
-    } else {
+    } else if (!isGuestMode()) {
       showAuthScreen();
       alreadyInitialized = false;
     }
@@ -4230,30 +4281,41 @@ async function checkAuthAndInit() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  var btn = document.getElementById('authSendBtn');
-  var input = document.getElementById('authEmailInput');
   var msg = document.getElementById('authStatusMsg');
-  if (!btn) return;
-  btn.addEventListener('click', async function() {
-    var email = (input.value || '').trim();
-    if (!email || email.indexOf('@') === -1) {
-      msg.textContent = 'Enter a valid email address';
-      msg.style.color = '#f75f5f';
-      return;
-    }
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-    var res = await sendMagicLink(email);
-    btn.disabled = false;
-    btn.textContent = 'Send sign-in link';
-    if (res && res.error) {
-      msg.textContent = 'Error: ' + res.error.message;
-      msg.style.color = '#f75f5f';
-    } else {
-      msg.textContent = 'Check your email for a sign-in link.';
-      msg.style.color = '#3ecf8e';
-    }
-  });
+  var googleBtn = document.getElementById('authGoogleBtn');
+  var guestBtn = document.getElementById('authGuestBtn');
+  var logoutBtn = document.getElementById('hsLogoutBtn');
+  if (guestBtn) {
+    guestBtn.addEventListener('click', function() {
+      enterGuestMode();
+    });
+  }
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function() {
+      if (!confirm('Log out? You can sign back in with the same or a different Google account anytime.')) return;
+      logOut();
+    });
+  }
+  if (googleBtn) {
+    googleBtn.addEventListener('click', async function() {
+      var sb = getSB();
+      if (!sb) return;
+      googleBtn.disabled = true;
+      var res = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + window.location.pathname }
+      });
+      if (res && res.error) {
+        googleBtn.disabled = false;
+        if (msg) {
+          msg.textContent = 'Error: ' + res.error.message;
+          msg.style.color = '#f75f5f';
+        }
+      }
+      // On success, Google redirects the whole page away — no further
+      // action needed here.
+    });
+  }
 });
 
 function setSyncStatus(status) {
@@ -4264,7 +4326,8 @@ function setSyncStatus(status) {
   var map = {
     online:  { color: '#3ecf8e', text: 'Synced' },
     syncing: { color: '#f7d44f', text: 'Syncing…' },
-    offline: { color: '#f75f5f', text: 'Offline' }
+    offline: { color: '#f75f5f', text: 'Offline' },
+    local:   { color: '#6b7194', text: 'Local only' }
   };
   var s = map[status] || map.offline;
   el.style.background = s.color;
