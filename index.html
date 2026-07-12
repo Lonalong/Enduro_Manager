@@ -4945,6 +4945,32 @@ checkAuthAndInit();
 function isMobile(){return Math.min(window.innerWidth, window.innerHeight)<=600;}
 function mobClear(id){var el=g(id);if(el)el.remove();}
 
+// Mobile content (mobCrew/mobStrat/mobRace) is only rendered at specific
+// trigger points (opening a race, switching tabs) — it does NOT
+// automatically re-render on its own just because the CSS layout changes.
+// Rotating a phone to landscape flips isMobile() from true to true (no
+// change there) but if it was ever false→true (e.g. resizing a desktop
+// browser window down past the mobile threshold, or certain phones
+// reporting an unusual initial size before settling), the mobile render
+// functions may never have run at all — leaving an empty or stale tab
+// behind CSS that's already hidden the desktop version. Re-render the
+// active tab's mobile content whenever the mobile/desktop boundary is
+// crossed, so rotation and resizing always leave a correctly rendered view.
+var _wasMobile = isMobile();
+window.addEventListener('resize', function() {
+  var nowMobile = isMobile();
+  if (nowMobile === _wasMobile) return;
+  _wasMobile = nowMobile;
+  if (!nowMobile) return; // going TO desktop — desktop CSS handles itself
+  var raceAppEl = g('raceApp');
+  if (!raceAppEl || raceAppEl.style.display === 'none') return; // no race open
+  var at = document.querySelector('.tab-page.active');
+  if (!at) return;
+  if (at.id === 'tab-strategy') { mobClear('mobStrat'); mobRenderStrategy(); }
+  else if (at.id === 'tab-drivers') { mobClear('mobCrew'); mobRenderCrew(); }
+  else if (at.id === 'tab-race') { mobClear('mobRace'); mobRenderRace(); }
+});
+
 // ── SHARED MOBILE CSS injected once ──────────────────────────
 (function(){
   if(g('mobCSS'))return;
