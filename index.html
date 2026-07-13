@@ -426,8 +426,24 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 <body>
 <!-- SIGN-IN SCREEN -->
 <div id="authScreen" style="display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;gap:40px;flex-wrap:wrap">
-  <div style="flex:0 0 auto;width:360px;pointer-events:none">
-    <style>#previewCard .rp-npb, #previewCard .rp-npb-del{font-size:14px !important}</style>
+  <div style="flex:0 0 auto;width:400px;max-width:90vw;pointer-events:none">
+    <style>
+      /* The real app's rp-* classes use vw-relative clamp() sizing because
+         normally this card fills most of the browser window, so vw tracks
+         its actual width. This preview card is a small fixed-size box
+         inside a much wider desktop viewport, so those vw values read the
+         full window width and render far too large — causing text/donuts
+         to overlap. Pin every size used here to a fixed px value instead,
+         scoped to #previewCard only so the real app is unaffected. */
+      #previewCard .rp-col-lbl{font-size:12px}
+      #previewCard .rp-donut-lbl{font-size:11px}
+      #previewCard .rp-add-lbl{font-size:11px}
+      #previewCard .rp-add-unit{font-size:20px}
+      #previewCard .rp-est-laps{font-size:13px}
+      #previewCard .rp-pw-sub{font-size:13px}
+      #previewCard .rp-np-unit{font-size:16px}
+      #previewCard .rp-npb, #previewCard .rp-npb-del{font-size:14px !important}
+    </style>
     <div class="rp-card rp-now" id="previewCard">
       <div class="rp-card-hdr">
         <span class="rp-now-pill">NOW</span>
