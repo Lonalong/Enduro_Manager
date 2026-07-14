@@ -23,6 +23,8 @@ h1{font-size:16px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
 .hw input,.si{background:var(--bg);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:inherit;font-size:13px;outline:none;transition:border .15s}
 .hw input{width:100%;padding:6px 4px;text-align:center}
 .si{width:100%;padding:6px 9px}
+.pc-benefit{color:var(--tg)!important}
+.pc-cost{color:var(--re)!important}
 .hw input:focus,.si:focus{border-color:var(--ac)}
 .hint{font-size:10px;color:var(--mu);margin-top:3px}
 .res{font-size:10px;color:var(--ac);margin-top:3px;min-height:13px}
@@ -72,6 +74,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .tab-btn.active{color:var(--ac);border-bottom-color:var(--ac)}
 .tab-btn:hover:not(.active){color:var(--tx)}
 .tab-page{display:none;padding-top:20px}.tab-page.active{display:block}
+#mobStrat,#mobCrew,#mobRace{display:none}
 /* Live time */
 .utc-clock{font-size:32px;font-weight:700;letter-spacing:.06em;color:var(--ac);line-height:1;font-variant-numeric:tabular-nums}
 .utc-date{font-size:10px;color:var(--mu);margin-top:3px;letter-spacing:.04em}
@@ -284,7 +287,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .race-name-display{font-size:11px;color:var(--ac);letter-spacing:.06em;padding:10px 0 10px 4px;margin-bottom:-1px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 
 /* ========== MOBILE RESPONSIVE ========== */
-@media (max-width: 600px), (max-height: 600px) and (orientation: landscape) {
+@media (max-width: 600px), (max-width: 900px) and (max-height: 600px) and (orientation: landscape) {
   body{padding:0}
   #homeScreen{padding:10px}
   .hs-header{flex-wrap:wrap;gap:8px}
@@ -305,6 +308,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
      of a tab-page except the mobile-injected containers (mobCrew,
      mobStrat, mobRace), which share the same parent element. */
   .tab-page.active > *:not(#mobCrew):not(#mobStrat):not(#mobRace){display:none !important}
+  .tab-page.active > #mobStrat,.tab-page.active > #mobCrew,.tab-page.active > #mobRace{display:block}
   .mob-hide{display:none !important}
   /* mob sections */
   .mob-sec{border-bottom:1px solid var(--bd)}
@@ -553,6 +557,23 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   <button class="strat-subtab" id="stratTabC" data-strat="C">Strategy C</button>
 </div>
 
+<div style="display:flex;align-items:center;gap:6px;margin:8px 0 12px;font-size:11px;color:var(--mu)">
+  <span>Copy</span>
+  <select id="copyFromSel" class="si" style="width:auto;padding:4px 6px;font-size:11px">
+    <option value="A">Strategy A</option>
+    <option value="B">Strategy B</option>
+    <option value="C">Strategy C</option>
+  </select>
+  <span>&#8594;</span>
+  <select id="copyToSel" class="si" style="width:auto;padding:4px 6px;font-size:11px">
+    <option value="A">Strategy A</option>
+    <option value="B" selected>Strategy B</option>
+    <option value="C">Strategy C</option>
+  </select>
+  <button class="abtn" id="copyStratBtn" style="padding:4px 10px;font-size:11px">Copy</button>
+  <span id="copyStratMsg" style="color:var(--tg);display:none">Copied</span>
+</div>
+
 <div class="top">
   <div class="panel">
     <div class="pt">Race duration</div>
@@ -690,6 +711,51 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   <div class="mc"><div class="mv" id="sMS">-</div><div class="ml">Max laps / stint</div></div>
   <div class="mc"><div class="mv" id="sTyres">-</div><div class="ml">Tyre sets required</div></div>
   <div class="mc"><div class="mv" id="sDrivers">-</div><div class="ml">Drivers</div></div>
+</div>
+
+<div class="panel" id="paceCostPanel" style="margin-bottom:12px">
+  <div class="pt">Pace cost settings</div>
+  <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+    <div>
+      <div style="font-size:10px;margin-bottom:4px;visibility:hidden">&nbsp;</div>
+      <div id="pcCoeffGroup" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <div class="field" style="margin-bottom:0;width:110px">
+          <label>Fuel weight cost</label>
+          <input class="si pc-benefit" type="number" id="pcFuelCoef" step="0.01" min="0" value="0.025" style="width:110px">
+          <div class="hint">sec / liter</div>
+        </div>
+        <div class="field" style="margin-bottom:0;width:110px">
+          <label>Tyre wear cost</label>
+          <input class="si pc-cost" type="number" id="pcTyreCoef" step="0.01" min="0" value="0.03" style="width:110px">
+          <div class="hint">sec / %</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:4px">Pit stop time loss</div>
+      <div id="pcPitGroup" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+        <div class="field" style="margin-bottom:0;width:100px">
+          <label>Tyre change</label>
+          <input class="si pc-cost" type="number" id="pcTyreChangeTime" step="0.5" min="0" value="13" style="width:100px">
+          <div class="hint">sec</div>
+        </div>
+        <div class="field" style="margin-bottom:0;width:100px">
+          <label>Refuel rate</label>
+          <input class="si pc-cost" type="number" id="pcRefuelRate" step="0.01" min="0" value="0.5" style="width:100px">
+          <div class="hint">sec / liter</div>
+        </div>
+        <div class="field" style="margin-bottom:0;width:100px">
+          <label>In/out-lap</label>
+          <input class="si pc-cost" type="number" id="pcOutLapPenalty" step="0.5" min="0" value="10" style="width:100px">
+          <div class="hint">sec</div>
+        </div>
+      </div>
+    </div>
+    <button class="abtn" id="pcCalcBtn" style="margin-left:auto">Calculate time cost</button>
+    <button class="abtn" id="pcClearBtn" style="color:var(--re);border-color:var(--re)">Reset</button>
+    <span id="pcStaleTag" style="font-size:10px;color:var(--tw);display:none">Inputs changed — recalculate</span>
+  </div>
+  <div id="pcResults" style="margin-top:12px"></div>
 </div>
 
 <div class="panel">
@@ -1066,6 +1132,23 @@ function applyStrategy(key){
   }
 }
 
+// Copy one strategy's full snapshot (inputs, manual pits, tyre overrides,
+// driver assignments, actual fuel data) into another slot, overwriting it.
+function copyStrategy(fromKey,toKey){
+  if(fromKey===toKey)return;
+  // Make sure the source reflects its latest live edits if it's the one on screen.
+  if(fromKey===activeStrategy)captureStrategy(fromKey);
+  if(!strategies[fromKey]){alert('Strategy '+fromKey+' has nothing to copy yet.');return;}
+  strategies[toKey]=clone(strategies[fromKey]);
+  if(toKey===activeStrategy){
+    applyStrategy(toKey);
+    run();
+    if(isMobile())mobRenderStrategy();
+  }
+  if(window.PaceCost)PaceCost.forceStale();
+  if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
+}
+
 function updateStrategyTabsUI(){
   ['A','B','C'].forEach(function(k){
     var el=g('stratTab'+k);
@@ -1095,7 +1178,9 @@ function switchStrategy(key){
   activeStrategy=key;
   applyStrategy(key);
   updateStrategyTabsUI();
+  if(window.PaceCost)PaceCost.suppressNext(true);
   run();
+  if(window.PaceCost)PaceCost.suppressNext(false);
   if(isMobile())mobRenderStrategy();
   if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
 }
@@ -1180,10 +1265,17 @@ function buildStints(tot,maxSL,fl,mrg,sf){
   var afl=actualFuelData; // actual fuel/lap from race, null if not set
   // Stint 1 may be shorter than maxSL if starting fuel is less than a full tank.
   var firstMaxSL=(sf!==undefined&&sf!==null&&fl>0)?Math.max(1,Math.floor((sf-mrg)/fl)):maxSL;
+  // True target for stint-building: race-clock laps plus the mandatory extra
+  // lap the car runs after the clock hits zero. Building against this from
+  // the start — rather than patching the last stint afterward — means no
+  // stint, auto or manual, can ever be asked to carry more fuel than the tank
+  // holds with full margin. If the numbers genuinely need another stop, the
+  // loop just produces one, same as it would for any other stint.
+  var totB=tot+1;
   var out=[],lap=1,num=1;
-  while(lap<=tot){
+  while(lap<=totB){
     var thisMaxSL=num===1?firstMaxSL:maxSL;
-    var st=lap,ae=Math.min(st+thisMaxSL-1,tot),end=ae,isM=false;
+    var st=lap,ae=Math.min(st+thisMaxSL-1,totB),end=ae,isM=false;
     var mv=manPits[num];
     if(mv!==undefined&&mv!==''){
       var mvi=parseInt(mv);
@@ -1192,14 +1284,16 @@ function buildStints(tot,maxSL,fl,mrg,sf){
     var laps=end-st+1;
     // Use actual fuel/lap for future stints if available
     var stintFl=afl&&afl.drivenStints&&num>afl.drivenStints?afl.fpl:fl;
-    var fuel=r2(laps*stintFl),fwm=r2(fuel+mrg),isLast=end>=tot;
+    var fuel=r2(laps*stintFl),fwm=r2(fuel+mrg),isLast=end>=totB;
     out.push({num:num,st:st,end:end,ae:ae,laps:laps,fuel:fuel,fwm:fwm,ep:null,lp:null,isLast:isLast,isM:isM,isDriven:afl&&num<=afl.drivenStints});
     lap=end+1;num++;
   }
   var n=out.length;
-  if(n>=2&&!out[n-2].isM){out[n-2].ep=Math.max(out[n-2].st,(tot+1)-maxSL);out[n-2].lp=out[n-2].end;}
-  // +1 lap buffer: last stint runs one extra lap after clock hits zero
-  if(out.length>0){var last=out[out.length-1];last.end+=1;last.laps+=1;last.isLast=true;var stintFl=afl&&afl.drivenStints&&last.num>afl.drivenStints?afl.fpl:fl;last.fuel=r2(last.laps*stintFl);last.fwm=r2(last.fuel+mrg);}
+  // ep can't be derived assuming uniform full-length stints — a shorter first
+  // stint (partial starting fuel) or an earlier manual pit shifts where later
+  // stints actually fall, so clamp ep to never exceed lp (a genuinely invalid
+  // window otherwise).
+  if(n>=2&&!out[n-2].isM){out[n-2].ep=Math.min(Math.max(out[n-2].st,totB-maxSL),out[n-2].end);out[n-2].lp=out[n-2].end;}
   return out;
 }
 
@@ -1262,7 +1356,7 @@ function run(){
     var lp=s.isLast||s.isM||s.lp===null?'<span style="color:var(--mu)">'+(s.isLast?'-':'N/A')+'</span>':'<span class="pc">'+s.lp+'</span>';
     var cur=manPits[s.num]!==undefined?manPits[s.num]:'';
     var mCell=s.isLast?'<span style="color:var(--mu)">-</span>':'<input class="mp'+(cur?' on':'')+'" type="number" data-n="'+s.num+'" data-st="'+s.st+'" data-ae="'+s.ae+'" data-tot="'+(tot+1)+'" placeholder="auto" value="'+cur+'">';
-    var fStr='<span style="color:var(--ye)">'+s.fwm.toFixed(1)+' L</span>';
+    var fStr='<span style="color:'+(s.fwm>tnk?'var(--re)':'var(--ye)')+'">'+s.fwm.toFixed(1)+' L</span>';
     var dIdx=stintDrivers[s.num]||0;
     var dOpts=drivers.map(function(d,di){return '<option value="'+di+'"'+(di===dIdx?' selected':'')+'>'+d+'</option>';}).join('');
     var tyreCol='',tcCell='';
@@ -1345,6 +1439,10 @@ function run(){
     });
   });
   gantt(stints,tot,tyre);
+  // Expose the just-computed strategy for the pace-cost module (read-only use —
+  // nothing outside this module mutates these).
+  window.__pcStints=stints;window.__pcTyre=tyre;window.__pcFuelPerLap=fl;window.__pcTank=tnk;window.__pcBaseLap=lSec;window.__pcTyreChange=tyreChange;
+  if(window.PaceCost)PaceCost.onRun();
   // Auto-save to Supabase after every recalculation
   if(currentRaceId){var _snap=snapshotState();scheduleSyncSave(currentRaceId,{_ts:Date.now(),snap:_snap});}
 }
@@ -1399,7 +1497,7 @@ function gantt(stints,tot,tyre){
       sv+='<rect x="'+(irX-irW).toFixed(1)+'" y="'+(irY-irH+2).toFixed(1)+'" width="'+irW+'" height="'+irH+'" rx="3" fill="rgba(247,212,79,.15)" opacity="'+op+'"/>';
       sv+='<text x="'+(irX-irW/2).toFixed(1)+'" y="'+(irY).toFixed(1)+'" text-anchor="middle" font-size="7" font-weight="700" fill="#f7d44f" font-family="monospace" opacity="'+op+'">'+dIrating+'</text>';
     }
-    sv+='<rect x="'+x1.toFixed(1)+'" y="'+y+'" width="'+bw.toFixed(1)+'" height="'+fH+'" rx="4" fill="'+col+(isDim||isDriven?'15':'33')+'" stroke="'+col+'" stroke-width="'+(isSel?'2.5':'1.5')+'" opacity="'+op+'"/>';
+    sv+='<rect data-stint="'+s.num+'" x="'+x1.toFixed(1)+'" y="'+y+'" width="'+bw.toFixed(1)+'" height="'+fH+'" rx="4" fill="'+col+(isDim||isDriven?'15':'33')+'" stroke="'+col+'" stroke-width="'+(isSel?'2.5':'1.5')+'" opacity="'+op+'"/>';
     if(!s.isLast&&!s.isM&&s.ep!==null){
       var p1=xS(s.ep),p2=xS(s.lp),pw=Math.max(1,p2-p1);
       sv+='<rect x="'+p1.toFixed(1)+'" y="'+y+'" width="'+pw.toFixed(1)+'" height="'+fH+'" rx="4" fill="#f7d44f18" stroke="#f7d44f" stroke-width="1" stroke-dasharray="3 3" opacity="'+op+'"/>';
@@ -1560,6 +1658,24 @@ document.querySelectorAll('.strat-subtab').forEach(function(btn){
   btn.addEventListener('click',function(){switchStrategy(this.dataset.strat);});
 });
 
+// Copy strategy control
+(function(){
+  var btn=g('copyStratBtn');
+  if(!btn)return;
+  btn.addEventListener('click',function(){
+    var from=g('copyFromSel').value,to=g('copyToSel').value;
+    if(from===to){alert('Pick two different strategies to copy between.');return;}
+    copyStrategy(from,to);
+    var msg=g('copyStratMsg');
+    if(msg){
+      msg.textContent='Copied '+from+' \u2192 '+to;
+      msg.style.display='';
+      clearTimeout(msg._t);
+      msg._t=setTimeout(function(){msg.style.display='none';},2500);
+    }
+  });
+})();
+
 // Strategy A/B selector (Race tab) — which strategy to sync from / push to
 document.querySelectorAll('.rp-strat-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
@@ -1659,18 +1775,27 @@ function rpGoFlag() {
 // Mirrors buildStints exactly — rp.manPits works same as manPits in strategy
 function rpBuildCalcStints() {
   var fl = rp.fuelPerLap, tnk = rp.tankCapacity, mrg = rp.margin;
-  var plannedFl = fv('iFuel'); // always use planned fuel/lap for max stint length
-  var maxSL = Math.floor((tnk - mrg) / plannedFl);
+  // Use the live fuel/lap rate (planned until real data comes in, then the
+  // measured actual rate) for stint length too — so once real consumption
+  // diverges from plan, future auto-projected stints shorten to match rather
+  // than staying pinned to the original plan and overflowing the tank.
+  var maxSL = Math.floor((tnk - mrg) / fl);
   // Stint 1 may be shorter than maxSL if starting fuel is less than a full tank.
   var sf = (rp.startFuel !== undefined && rp.startFuel !== null) ? rp.startFuel : tnk;
-  var firstMaxSL = plannedFl > 0 ? Math.max(1, Math.floor((sf - mrg) / plannedFl)) : maxSL;
+  var firstMaxSL = fl > 0 ? Math.max(1, Math.floor((sf - mrg) / fl)) : maxSL;
   var tot = rp.totalLaps;
   if (!fl || !tnk || tot < 1 || maxSL < 1) { rp.calcStints = []; return; }
 
   var out = [], lap = 1, num = 1;
-  while (lap <= tot) {
+  // True target for stint-building: race-clock laps plus the mandatory extra
+  // lap the car runs after the clock hits zero. Building against this from
+  // the start means no stint, auto or manual, can ever be asked to carry more
+  // fuel than the tank holds with full margin — if it needs another stop, the
+  // loop just produces one, same as any other stint.
+  var totB = tot + 1;
+  while (lap <= totB) {
     var thisMaxSL = num === 1 ? firstMaxSL : maxSL;
-    var st = lap, ae = Math.min(st + thisMaxSL - 1, tot), end = ae, isM = false;
+    var st = lap, ae = Math.min(st + thisMaxSL - 1, totB), end = ae, isM = false;
     var mv = rp.manPits[num];
     if (mv !== undefined && mv !== '') {
       var mvi = parseInt(mv);
@@ -1684,17 +1809,24 @@ function rpBuildCalcStints() {
     var fpl = actualFpl !== undefined ? actualFpl : fl;
     var fuel = r2(laps * fpl);
     var fwm = r2(fuel + mrg);
-    var isLast = end >= tot;
+    // A manually-recorded stint (real race data) is the final one once it
+    // reaches the actual race distance (tot) — the +1 buffer only matters for
+    // auto-projected future stints, which still plan against totB so they
+    // never exceed tank capacity.
+    var isLast = isM ? (end >= tot) : (end >= totB);
     out.push({ num: num, st: st, end: end, ae: ae, laps: laps, fuel: fuel, fwm: fwm, ep: null, lp: null, isLast: isLast, isM: isM });
+    if (isM && end >= tot) break; // real data confirms the race is done here — don't project a phantom stint after it
     lap = end + 1; num++;
   }
   var n = out.length;
+  // ep can't be derived assuming uniform full-length stints — a shorter first
+  // stint (partial starting fuel) or an earlier manual pit shifts where later
+  // stints actually fall, so clamp ep to never exceed lp (a genuinely invalid
+  // window otherwise).
   if (n >= 2 && !out[n - 2].isM) {
-    out[n - 2].ep = Math.max(out[n - 2].st, (tot + 1) - maxSL);
+    out[n - 2].ep = Math.min(Math.max(out[n - 2].st, totB - maxSL), out[n - 2].end);
     out[n - 2].lp = out[n - 2].end;
   }
-  // +1 lap buffer: last stint runs one extra lap after clock hits zero
-  if (out.length > 0) { var last2 = out[out.length - 1]; last2.end += 1; last2.laps += 1; last2.isLast = true; last2.fuel = r2(last2.laps * fl); last2.fwm = r2(last2.fuel + mrg); }
   rp.calcStints = out;
 
   rp.calcTyreChange = {};
@@ -2001,7 +2133,7 @@ function renderRacePage() {
       + fuelCell
       // Col 4: fuel add
       + '<div class="rp-col rp-col-fueladd" id="rpFuelAddCol' + s.num + '">'
-      + '<div style="display:flex;flex-direction:column;justify-content:flex-end;flex:1"><div class="rp-fuel-req-lbl">Fuel required</div><div class="rp-fuel-req-val" id="rpFuelReq' + s.num + '">' + s.fwm.toFixed(1) + '<span style="font-size:clamp(14px,1.5vw,24px);color:var(--mu)"> L</span></div></div>'
+      + '<div style="display:flex;flex-direction:column;justify-content:flex-end;flex:1"><div class="rp-fuel-req-lbl">Fuel required</div><div class="rp-fuel-req-val" id="rpFuelReq' + s.num + '" style="' + (s.fwm > rp.tankCapacity ? 'color:var(--re)' : '') + '">' + s.fwm.toFixed(1) + '<span style="font-size:clamp(14px,1.5vw,24px);color:var(--mu)"> L</span></div></div>'
       + '<div style="display:flex;flex-direction:column;justify-content:flex-start;flex:1"><div class="rp-add-lbl">Add to car</div><div id="rpAddVal' + s.num + '"><span class="rp-add-val">' + Math.ceil(addVal) + '</span><span class="rp-add-unit"> L</span></div><div class="rp-est-laps" id="rpEstLaps' + s.num + '">Est. <span class="rp-est-laps-n">' + estLaps + '</span> laps</div></div>'
       + '</div>'
       // Col 5: donut
@@ -4953,12 +5085,337 @@ checkAuthAndInit();
 
 
 
+// ========== PACE COST MODULE ==========
+// Self-contained: reads window.__pcStints/__pcTyre (set at the end of run()) and the
+// existing strategies{A,B,C}/activeStrategy store. Never mutates core calculator state.
+// Only recalculates on demand (pcCalcBtn click), not on every run().
+var PaceCost=(function(){
+  var STRATS=['A','B','C'];
+  var results=null; // {A:{stints:[...],total},B:...,C:...,fastestKey}
+  var suppressCheck=false; // true while something is temporarily swapping strategy state via run() for reasons unrelated to a genuine plan edit
+
+  function coeffs(){return {fuel:fv('pcFuelCoef')||0,tyre:fv('pcTyreCoef')||0,tyreChangeTime:fv('pcTyreChangeTime')||0,refuelRate:fv('pcRefuelRate')||0,outLapPenalty:fv('pcOutLapPenalty')||0};}
+
+  // Per-lap cost model. Base (average lap time) is treated as the pace at a
+  // genuinely full tank, so every lap gets:
+  //   + tyre cost   — grows every lap since the last tyre change (worn tyres = slower)
+  //   - fuel benefit — grows every lap as fuel burns off from a full tank (lighter = faster)
+  // Plus, for every stint except the first (nothing pits before the race
+  // starts): a pit-stop cost — tyre change and refuelling happen in parallel,
+  // so the stationary time is whichever of the two takes longer, plus a flat
+  // in/out-lap penalty (covers both pit-entry loss and the cold-tyre out-lap).
+  // Everything here is backend-only; only the delta between strategies is ever shown.
+  function stintCost(stint,stintIndex,allStints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap){
+    var lscBefore=stintBase(allStints,stintIndex).lsc; // laps since last tyre change, before this stint
+    var wearPerLap=(tyre&&tyre.valid)?tyre.wearPerLap:0;
+    var totalTyre=0,totalFuelBenefit=0;
+    for(var n=1;n<=stint.laps;n++){
+      var fuelInTank=Math.max(0,stint.fwm-(n-1)*fuelPerLap);
+      totalFuelBenefit+=(tankCap-fuelInTank)*c.fuel;
+      var treadLostSoFar=Math.min(100,(lscBefore+(n-1))*wearPerLap);
+      totalTyre+=treadLostSoFar*c.tyre;
+    }
+    var pitCost=0;
+    if(stintIndex>0){
+      tyreChangeMap=tyreChangeMap||{};
+      var prevStint=allStints[stintIndex-1];
+      var tyreChanged=!!tyreChangeMap[prevStint.num];
+      var litersAdded=stint.fuel; // fuel actually poured in — excludes margin, since the tank isn't empty at a stop, it's already sitting near the margin reserve
+      var stationaryTime=Math.max(tyreChanged?c.tyreChangeTime:0,c.refuelRate*litersAdded);
+      pitCost=stationaryTime+c.outLapPenalty;
+    }
+    return r2(baseLap*stint.laps+totalTyre-totalFuelBenefit+pitCost);
+  }
+
+  function strategyStintCosts(stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap){
+    return stints.map(function(s,i){return {num:s.num,cost:stintCost(s,i,stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap)};});
+  }
+  function strategyTotal(costList){
+    return r2(costList.reduce(function(a,x){return a+x.cost;},0));
+  }
+
+  // Pull the computed stints/tyre/reference values for a given strategy slot
+  // without disturbing whatever's currently shown in the UI.
+  function getStintsFor(key){
+    if(!strategies[key]&&key!==activeStrategy)return null; // slot never filled
+    var out=null;
+    withStrategy(key,function(){
+      out={
+        stints:(window.__pcStints||[]).slice(),
+        tyre:window.__pcTyre,
+        fuelPerLap:window.__pcFuelPerLap||0,
+        tankCap:window.__pcTank||0,
+        baseLap:window.__pcBaseLap||0,
+        tyreChangeMap:window.__pcTyreChange||{}
+      };
+    });
+    return out;
+  }
+
+  function pcCalcAll(){
+    var c=coeffs();
+    var res={};
+    suppressCheck=true;
+    STRATS.forEach(function(key){
+      var data=getStintsFor(key);
+      if(!data||!data.stints.length){res[key]=null;return;}
+      var costs=strategyStintCosts(data.stints,data.tyre,c,data.fuelPerLap,data.tankCap,data.baseLap,data.tyreChangeMap);
+      res[key]={stints:costs,total:strategyTotal(costs)};
+    });
+    suppressCheck=false;
+    var fastestKey=null,fastestTotal=Infinity;
+    STRATS.forEach(function(key){
+      if(res[key]&&res[key].total<fastestTotal){fastestTotal=res[key].total;fastestKey=key;}
+    });
+    res.fastestKey=fastestKey;
+    // Index-match every strategy's stints — including the fastest strategy's
+    // own — against the fastest strategy's stints. The fastest naturally comes
+    // out to a delta of exactly 0 against itself, which displays as "±00s"
+    // rather than being hidden — a real (if trivial) comparison result.
+    if(fastestKey){
+      var fastStints=res[fastestKey].stints;
+      STRATS.forEach(function(key){
+        if(!res[key])return;
+        res[key].stints.forEach(function(s,i){
+          if(i<fastStints.length){s.delta=r2(s.cost-fastStints[i].cost);}
+          else{s.delta=null;s.extra=true;} // no counterpart — this stint is pure added time
+        });
+      });
+    }
+    results=res;
+    markFresh();
+    renderResults();
+    overlayGanttBadges();
+  }
+
+  function pcClearAll(){
+    results=null;
+    var svg=document.querySelector('#gantt svg');
+    if(svg)svg.querySelectorAll('.pc-badge').forEach(function(el){el.remove();});
+    var tag=g('pcStaleTag');if(tag)tag.style.display='none';
+    var panel=g('pcResults');
+    if(panel){panel.style.opacity='1';panel.innerHTML='<div class="hint">Fill in at least one strategy and press Calculate.</div>';}
+  }
+
+  function markStale(){
+    var tag=g('pcStaleTag');if(tag)tag.style.display=results?'':'none';
+    var panel=g('pcResults');if(panel&&results)panel.style.opacity='0.4';
+  }
+  function markFresh(){
+    var tag=g('pcStaleTag');if(tag)tag.style.display='none';
+    var panel=g('pcResults');if(panel)panel.style.opacity='1';
+  }
+
+  // Time formatting for pace-cost display only — seconds get one decimal
+  // place (this module deals in fractions of a second), minutes stay plain
+  // integers. Deliberately separate from the app's global fmtSec, which is
+  // used elsewhere for whole-second race duration/lap time displays.
+  function pcFmtSec(t){
+    var h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%3600%60,p=[];
+    if(h)p.push(h+'h');
+    if(m||h)p.push(m+'m');
+    p.push(s.toFixed(1)+'s');
+    return p.join(' ');
+  }
+
+  // Shared sign/color/label logic for a delta value, used by both the results
+  // panel and the gantt badges so they always agree. A genuine tie (delta
+  // exactly 0, including the fastest strategy compared to itself) shows "±"
+  // rather than defaulting to + or -, and is colored neutral rather than
+  // red/green since it's neither a cost nor a gain.
+  function pcLabelFor(costEntry){
+    var val=costEntry.extra?costEntry.cost:costEntry.delta;
+    if(val===null||val===undefined)return null;
+    var sign,color;
+    if(costEntry.extra){sign='+';color='#f75f5f';}
+    else if(val===0){sign='\u00b1';color='#6b7194';}
+    else if(val>0){sign='+';color='#f75f5f';}
+    else{sign='-';color=COL_GOOD;}
+    var label=sign+pcFmtSec(Math.abs(val))+(costEntry.extra?' (extra)':'');
+    return {label:label,color:color,val:val};
+  }
+
+  function fmtDelta(sec){
+    if(sec===null||sec===undefined)return '';
+    if(sec===0)return '\u00b1'+pcFmtSec(0);
+    var sign=sec>0?'+':'-';
+    return sign+pcFmtSec(Math.abs(sec));
+  }
+
+  function renderResults(){
+    var el=g('pcResults');if(!el)return;
+    if(!results||!results.fastestKey){
+      el.innerHTML='<div class="hint">Fill in at least one strategy and press Calculate.</div>';
+      return;
+    }
+    var html='<div style="display:flex;gap:10px;flex-wrap:wrap">';
+    STRATS.forEach(function(key){
+      var r=results[key];
+      if(!r)return;
+      var isFast=key===results.fastestKey;
+      var tag=isFast
+        ?'<span style="color:'+COL_GOOD+';font-weight:700">Fastest</span>'
+        :'<span style="color:var(--re)">'+fmtDelta(r.total-results[results.fastestKey].total)+' vs fastest</span>';
+      var stintList=r.stints.map(function(s){
+        var l=pcLabelFor(s);
+        if(!l)return 'S'+s.num;
+        return 'S'+s.num+' '+l.label;
+      }).join(' &nbsp; ');
+      html+='<div class="mc" style="flex:1;min-width:180px">'
+        +'<div style="font-size:11px;font-weight:700;margin-bottom:4px">Strategy '+key+'</div>'
+        +'<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Total: '+pcFmtSec(r.total)+'</div>'
+        +'<div style="margin-bottom:6px">'+tag+'</div>'
+        +'<div style="font-size:9px;color:var(--mu);line-height:1.6">'+stintList+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }
+
+  // Overlay a small circle indicator (filled green/red by sign) plus a compact
+  // label onto the live gantt SVG for whichever strategy is currently shown.
+  // Position is read from the bar's own rendered x/y/width/height (via the
+  // data-stint tag gantt() sets) rather than recomputed independently, so it
+  // always matches gantt()'s real layout — including whatever right margin it
+  // reserved — and is then clamped to the viewBox so it can never spill outside,
+  // which is the case most likely to bite on the last stint (its bar runs to
+  // the chart's right edge).
+  function overlayGanttBadges(stale){
+    if(!results||!results.fastestKey)return;
+    var r=results[activeStrategy];
+    if(!r)return;
+    var svg=document.querySelector('#gantt svg');
+    if(!svg)return;
+    svg.querySelectorAll('.pc-badge').forEach(function(el){el.remove();}); // clear any badges from a previous draw before adding new ones
+    var stints=window.__pcStints||[];
+    if(!stints.length)return;
+    var vw=svg.viewBox.baseVal.width;
+    var ns='http://www.w3.org/2000/svg';
+    var pL=72; // matches gantt()'s left plot margin
+    var op=stale?'0.4':'1';
+    stints.forEach(function(s,i){
+      var costEntry=r.stints[i];
+      if(!costEntry)return;
+      var lbl=pcLabelFor(costEntry);
+      if(!lbl)return;
+      var bar=svg.querySelector('rect[data-stint="'+s.num+'"]');
+      if(!bar)return;
+      var bx=parseFloat(bar.getAttribute('x')),by=parseFloat(bar.getAttribute('y'));
+      var bw=parseFloat(bar.getAttribute('width')),bh=parseFloat(bar.getAttribute('height'));
+      var cy=by+bh/2;
+      var color=lbl.color,label=lbl.label;
+      // Outlined pill: tinted fill, colored stroke, colored centered text —
+      // sized to fit the full label rather than a fixed-size dot.
+      var pillH=15,pillPad=9,estTextW=label.length*5.2,pillW=estTextW+pillPad*2;
+      // Narrow bars (gantt's own bw<=60 threshold) already push the fuel amount
+      // and lap-range text outside the bar at roughly this same position — give
+      // the badge extra clearance there so it doesn't land on top of them.
+      var isNarrow=bw<=60;
+      var rightClearance=isNarrow?55:10;
+      var fitsRight=(bx+bw+rightClearance+pillW)<=(vw-8);
+      var leftSpace=bx-pL;
+      var fitsLeft=leftSpace>=(pillW+8);
+      var pillX;
+      if(fitsRight){
+        pillX=bx+bw+rightClearance;
+      } else if(fitsLeft){
+        // No room on the right (typically the last stint, whose bar already
+        // runs to the chart's own reserved edge) — the space to the left of
+        // the bar, back toward the plot's left margin, is normally empty.
+        pillX=bx-8-pillW;
+      } else {
+        // Last resort: clamp to the viewBox edge rather than let it spill off-canvas.
+        pillX=vw-8-pillW;
+        var minLeftEdge=bx+bw+4;
+        if(pillX<minLeftEdge)pillX=minLeftEdge;
+      }
+      var pillY=cy-pillH/2;
+      var pill=document.createElementNS(ns,'rect');
+      pill.setAttribute('x',pillX.toFixed(1));
+      pill.setAttribute('y',pillY.toFixed(1));
+      pill.setAttribute('width',pillW.toFixed(1));
+      pill.setAttribute('height',pillH);
+      pill.setAttribute('rx',(pillH/2).toFixed(1));
+      pill.setAttribute('fill',color+'1a');
+      pill.setAttribute('stroke',color);
+      pill.setAttribute('stroke-width','1.5');
+      pill.setAttribute('opacity',op);
+      pill.setAttribute('class','pc-badge');
+      svg.appendChild(pill);
+      var t=document.createElementNS(ns,'text');
+      t.setAttribute('x',(pillX+pillW/2).toFixed(1));
+      t.setAttribute('y',(cy+3).toFixed(1));
+      t.setAttribute('font-size','8');
+      t.setAttribute('font-family','monospace');
+      t.setAttribute('font-weight','700');
+      t.setAttribute('fill',color);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('opacity',op);
+      t.setAttribute('class','pc-badge');
+      t.textContent=label;
+      svg.appendChild(t);
+    });
+  }
+
+  return {
+    onRun:function(){
+      if(!results){return;} // nothing calculated yet — nothing to compare or redraw
+      var r=results[activeStrategy];
+      if(!r){markFresh();return;} // this strategy was never part of the last calculation
+      if(suppressCheck){
+        // A strategy switch (or the module's own internal swap-and-restore),
+        // not a genuine edit — never let this affect staleness. Just redraw
+        // the badges gantt() just wiped, using whatever's already computed.
+        markFresh();
+        overlayGanttBadges(false);
+        return;
+      }
+      // Anything else reaching here is an edit inside the currently-viewed
+      // strategy — grey out unconditionally, whatever it was. Still redraw the
+      // (now outdated) badges onto the freshly-rebuilt chart, dimmed, rather
+      // than letting them vanish.
+      markStale();
+      overlayGanttBadges(true);
+    },
+    // Called by switchStrategy() around its run() call — a strategy-tab
+    // switch must never be able to mark the badges stale.
+    suppressNext:function(v){suppressCheck=v;},
+    // Called after an operation (e.g. copying a strategy) that can invalidate
+    // the last calculation regardless of which strategy is currently on screen —
+    // unlike onRun(), this doesn't wait for the active strategy's own run().
+    forceStale:function(){
+      if(!results)return;
+      markStale();
+      if(results[activeStrategy])overlayGanttBadges(true);
+    },
+    calc:pcCalcAll,
+    clear:pcClearAll
+  };
+})();
+
+(function(){
+  var btn=g('pcCalcBtn');
+  if(btn)btn.addEventListener('click',function(){PaceCost.calc();});
+  var clearBtn=g('pcClearBtn');
+  if(clearBtn)clearBtn.addEventListener('click',function(){PaceCost.clear();});
+  ['pcFuelCoef','pcTyreCoef','pcTyreChangeTime','pcRefuelRate','pcOutLapPenalty'].forEach(function(id){
+    var el=g(id);
+    if(el)el.addEventListener('input',function(){var t=g('pcStaleTag');if(t)t.style.display='';});
+  });
+})();
+// ========== END PACE COST MODULE ==========
+
 // ========== MOBILE RENDER LAYER ==========
 // Uses the smaller of width/height so a phone rotated to landscape (where
 // width temporarily exceeds 600px) is still correctly detected as mobile —
 // its short dimension stays phone-sized regardless of orientation, unlike
 // a real desktop window which has no small dimension at all.
-function isMobile(){return Math.min(window.innerWidth, window.innerHeight)<=600;}
+function isMobile(){
+  var w=window.innerWidth,h=window.innerHeight;
+  // Narrow (portrait phone), or short AND not-too-wide (phone landscape) —
+  // but never a genuinely wide desktop window that just isn't tall right now.
+  return w<=600||(h<=600&&w<=900);
+}
 function mobClear(id){var el=g(id);if(el)el.remove();}
 
 // Mobile content (mobCrew/mobStrat/mobRace) is only rendered at specific
@@ -5317,7 +5774,7 @@ function mobRenderRace(){
     html+='<div class="m-rc-grid">';
     html+='<div class="m-rc-cell"><div class="m-rc-lbl">Pit window</div><div class="m-rc-val" style="color:var(--ye)">'+pitWin+'</div><div class="m-rc-sub">'+pitWinSub+'</div></div>';
     html+='<div class="m-rc-cell"><div class="m-rc-lbl">Laps this stint</div><div class="m-rc-val" style="color:var(--tx)">'+s.laps+'</div><div class="m-rc-sub">→ end L'+s.end+'</div></div>';
-    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Fuel required</div><div class="m-rc-val" style="color:var(--tx)">'+s.fwm.toFixed(1)+'<span style="font-size:15px;color:var(--mu)"> L</span></div></div>';
+    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Fuel required</div><div class="m-rc-val" style="color:'+(s.fwm>rp.tankCapacity?'var(--re)':'var(--tx)')+'">'+s.fwm.toFixed(1)+'<span style="font-size:15px;color:var(--mu)"> L</span></div></div>';
     html+='<div class="m-rc-cell"><div class="m-rc-lbl">Add to car</div><div id="madd'+s.num+'" class="m-rc-val" style="color:var(--tg)">'+Math.ceil(addVal)+'<span style="font-size:15px;color:var(--mu)"> L</span></div><div class="m-rc-sub">est. '+estLaps+' laps</div></div>';
     html+='</div>';
 
@@ -5576,7 +6033,9 @@ function syncPipCard() {
     host._naturalH = host.scrollHeight;
     if (pipWindow._applyPipScale) pipWindow._applyPipScale();
   } else {
-    var src = document.getElementById('rpCard' + rp.currentStint);
+    var src = rp.raceCompleted
+      ? document.querySelector('.rp-completed-card')
+      : document.getElementById('rpCard' + rp.currentStint);
     if (!src) return;
     host.innerHTML = src.outerHTML;
     bindPipCard(host);
@@ -5584,6 +6043,17 @@ function syncPipCard() {
 }
 
 function bindPipCard(host) {
+  var undoCompletedBtn = host.querySelector('#rpUndoCompleted');
+  if (undoCompletedBtn) {
+    // Completed card has nothing else to bind — same reset the desktop
+    // version's own undo button uses.
+    undoCompletedBtn.addEventListener('click', function () {
+      rp.raceCompleted = false;
+      rpBuildCalcStints();
+      renderRacePage();
+    });
+    return;
+  }
   var colsEl = host.querySelector('.rp-cols');
   if (colsEl) rpObserveNarrow(colsEl);
 
@@ -5636,6 +6106,17 @@ function bindPipCard(host) {
 // Build the mobile-format card markup for the current stint only (adapted
 // from mobRenderRace, trimmed to a single always-NOW card for the overlay).
 function pipBuildMobileCardHTML() {
+  if (rp.raceCompleted) {
+    var totalLapsDriven = rp.calcStints.length > 0 ? rp.calcStints[rp.calcStints.length - 1].end : rp.totalLaps;
+    var html = '<div class="m-rc" id="pipMrc" style="border-color:' + COL_GOOD + '">';
+    html += '<div class="m-rc-hdr"><span class="m-tag" style="background:' + COL_GOOD + ';color:#0d0f14">DONE</span><span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:' + COL_GOOD + ';flex:1">Race Complete</span></div>';
+    html += '<div style="padding:22px 16px;text-align:center">';
+    html += '<div style="font-size:16px;font-weight:700;margin-bottom:8px">Race Completed</div>';
+    html += '<div style="font-size:11px;color:var(--mu);margin-bottom:16px">Total laps driven <span style="color:var(--tx);font-weight:700">' + totalLapsDriven + '</span></div>';
+    html += '<button class="pip-undo-completed-btn" id="pipUndoCompleted" style="font-size:11px;padding:6px 14px;border-radius:6px;border:1px solid var(--bd);color:var(--mu);background:transparent;font-family:inherit;cursor:pointer">&#8617; Undo</button>';
+    html += '</div></div>';
+    return html;
+  }
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
   if (!s) return '';
   var si = rp.calcStints.indexOf(s);
@@ -5678,7 +6159,7 @@ function pipBuildMobileCardHTML() {
   html += '<div class="m-rc-grid">';
   html += '<div class="m-rc-cell"><div class="m-rc-lbl">Pit window</div><div class="m-rc-val" style="color:var(--ye)">' + pitWin + '</div><div class="m-rc-sub">' + pitWinSub + '</div></div>';
   html += '<div class="m-rc-cell"><div class="m-rc-lbl">Laps this stint</div><div class="m-rc-val" style="color:var(--tx)">' + s.laps + '</div><div class="m-rc-sub">→ end L' + s.end + '</div></div>';
-  html += '<div class="m-rc-cell"><div class="m-rc-lbl">Fuel required</div><div class="m-rc-val" style="color:var(--tx)">' + s.fwm.toFixed(1) + '<span style="font-size:15px;color:var(--mu)"> L</span></div></div>';
+  html += '<div class="m-rc-cell"><div class="m-rc-lbl">Fuel required</div><div class="m-rc-val" style="color:' + (s.fwm > rp.tankCapacity ? 'var(--re)' : 'var(--tx)') + '">' + s.fwm.toFixed(1) + '<span style="font-size:15px;color:var(--mu)"> L</span></div></div>';
   html += '<div class="m-rc-cell"><div class="m-rc-lbl">Add to car</div><div class="m-rc-val" style="color:var(--tg)">' + Math.ceil(addVal) + '<span style="font-size:15px;color:var(--mu)"> L</span></div><div class="m-rc-sub">est. ' + estLaps + ' laps</div></div>';
   html += '</div>';
 
@@ -5710,6 +6191,15 @@ function pipBuildMobileCardHTML() {
 }
 
 function bindPipMobileCard(host) {
+  if (rp.raceCompleted) {
+    var undoCompletedBtn = host.querySelector('.pip-undo-completed-btn');
+    if (undoCompletedBtn) undoCompletedBtn.addEventListener('click', function () {
+      rp.raceCompleted = false;
+      rpBuildCalcStints();
+      renderRacePage();
+    });
+    return;
+  }
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
   if (!s) return;
   var sn = s.num, prevNum = sn - 1;
