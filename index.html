@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Endurance Racing Planner</title>
+<title>Enduro Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -67,6 +67,8 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .tgl{display:flex;align-items:center;gap:6px;cursor:pointer}
 .tgl-track{width:34px;height:19px;border-radius:10px;display:flex;align-items:center;padding:2px;transition:background .2s}
 .tgl-thumb{width:15px;height:15px;border-radius:50%;background:#0d0f14;flex-shrink:0;transition:margin .2s}
+.cmpd-badge{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);background:transparent;cursor:pointer;transition:all .15s;font-family:inherit}
+.cmpd-badge.active{border-color:var(--badge-c);color:var(--bg);background:var(--badge-c)}
 /* ========== DRIVER PAGE CSS ========== */
 /* Tab navigation */
 .tab-nav{display:flex;gap:0;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:200;background:var(--bg)}
@@ -502,7 +504,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
     </div>
   </div>
   <div style="width:100%;max-width:340px;text-align:center">
-    <div style="font-size:20px;font-weight:600;margin-bottom:4px">Endurance Racing Planner</div>
+    <div style="font-size:20px;font-weight:600;margin-bottom:4px">Enduro Manager</div>
     <div style="font-size:13px;color:var(--mu);margin-bottom:24px">Sign in to save your races to the cloud and access them from any device</div>
     <div id="authFormWrap">
       <button id="authGoogleBtn" type="button" style="width:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;font-size:14px;cursor:pointer">
@@ -522,7 +524,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 <div id="homeScreen" style="display:none">
   <div class="hs-header">
     <div>
-      <div class="hs-title">Endurance Racing Planner</div>
+      <div class="hs-title">Enduro Manager</div>
       <div class="hs-sub">Fuel strategy &bull; Tyre wear &bull; Pit windows &bull; Driver allocation</div>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
@@ -639,6 +641,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
         <span id="tyreTglLbl" style="font-size:10px;color:var(--ac);text-transform:uppercase;letter-spacing:.06em">On</span>
       </div>
     </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="compoundRow"></div>
     <div class="field">
       <label>Laps driven</label>
       <input class="si" type="number" id="iLapsOn" min="0" value="15">
@@ -714,7 +717,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 </div>
 
 <div class="panel" id="paceCostPanel" style="margin-bottom:12px">
-  <div class="pt">Pace cost settings</div>
+  <div class="pt">Time cost settings</div>
   <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
     <div>
       <div style="font-size:10px;margin-bottom:4px;visibility:hidden">&nbsp;</div>
@@ -751,7 +754,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
         </div>
       </div>
     </div>
-    <button class="abtn" id="pcCalcBtn" style="margin-left:auto">Calculate time cost</button>
+    <button class="abtn" id="pcCalcBtn" style="margin-left:auto">Compare time cost</button>
     <button class="abtn" id="pcClearBtn" style="color:var(--re);border-color:var(--re)">Reset</button>
     <span id="pcStaleTag" style="font-size:10px;color:var(--tw);display:none">Inputs changed — recalculate</span>
   </div>
@@ -1043,6 +1046,15 @@ var STRAT_INPUT_IDS=['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStart
   'flO','flM','flI','frO','frM','frI','rlO','rlM','rlI','rrO','rrM','rrI'];
 var strategies={A:null,B:null,C:null};
 var activeStrategy='A';
+var TYRE_COMPOUNDS=[
+  {id:'dry',label:'Dry',color:'#e8eaf0'},
+  {id:'soft',label:'Soft',color:'#f75f5f'},
+  {id:'medium',label:'Medium',color:'#f7d44f'},
+  {id:'hard',label:'Hard',color:'#8b93b8'},
+  {id:'wet',label:'Wet',color:'#4f8ef7'},
+  {id:'intermediate',label:'Inter',color:'#3ecf8e'}
+];
+var tyreCompound='dry';
 var raceSyncStrategy='A'; // which strategy the Race tab currently syncs from / pushes to
 var domStrategyKey='A'; // which strategy the live inputs/globals currently reflect (may briefly differ from activeStrategy during a withStrategy swap)
 // ========== DRIVER PAGE SHARED STATE ==========
@@ -1075,7 +1087,7 @@ function fmtSec(t){
   return p.join(' ');
 }
 
-function renderDriverInputs(){} // drivers now managed in Drivers tab
+// Driver inputs now managed in Drivers tab
 
 // ========== DUAL STRATEGY (A/B) HELPERS ==========
 function clone(o){return JSON.parse(JSON.stringify(o));}
@@ -1089,6 +1101,7 @@ function captureStrategy(key){
     manPits:clone(manPits),
     manOverride:clone(manOverride),
     tyreOn:tyreOn,
+    tyreCompound:tyreCompound,
     stintDrivers:clone(stintDrivers),
     actualFuelData:actualFuelData?clone(actualFuelData):null,
     selStint:selStint
@@ -1106,6 +1119,8 @@ function applyStrategy(key){
   manPits=clone(s.manPits||{});
   manOverride=clone(s.manOverride||{});
   tyreOn=s.tyreOn!==undefined?s.tyreOn:true;
+  tyreCompound=s.tyreCompound||'dry';
+  renderCompoundRow();
   stintDrivers=clone(s.stintDrivers||{});
   // Actual fuel consumption only exists for a strategy that has genuinely had
   // real race data pushed into it — switching to a strategy that's never been
@@ -1209,6 +1224,25 @@ function withStrategy(key,fn){
 
 function autoDistribute(stints){
   stints.forEach(function(s,i){stintDrivers[s.num]=i%drivers.length;});
+}
+
+// Render the tyre compound badge selector — purely informational (doesn't
+// affect wear math), just labels which compound the calculator's readings
+// are for.
+function renderCompoundRow(){
+  var row=g('compoundRow');
+  if(!row)return;
+  row.innerHTML=TYRE_COMPOUNDS.map(function(c){
+    var isActive=c.id===tyreCompound;
+    return '<button type="button" class="cmpd-badge'+(isActive?' active':'')+'" style="--badge-c:'+c.color+'" data-cmpd="'+c.id+'">'+c.label+'</button>';
+  }).join('');
+  row.querySelectorAll('.cmpd-badge').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      tyreCompound=this.dataset.cmpd;
+      renderCompoundRow();
+      if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
+    });
+  });
 }
 
 function tyreCalc(){
@@ -1324,6 +1358,7 @@ function applyTyreChanges(stints,wpl){
 
 function run(){
   clampStartFuel();
+  renderCompoundRow();
   var rSec=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
   var lSec=hmsToSec(iv('ltH'),iv('ltM'),iv('ltS'));
   var fl=fv('iFuel'),tnk=fv('iTank'),mrgL=fv('iMargin'),mrg=r2(mrgL*fl);
@@ -1958,8 +1993,9 @@ function renderRacePage() {
       + '<span style="margin-left:auto">' + undoBtnHtml + setNowBtn + '</span>'
       + '</div>';
 
-    // ---- S1 card: simplified ----
-    if (s.num === 1 && isNow) {
+    // ---- S1 card: simplified (stays in this layout even once done) ----
+    if (s.num === 1 && (isNow || isDone)) {
+      var s1Done = isDone;
       var tread1HTML = rpDonutSVG(100, 96);
       var s1dIdx = stintDrivers[s.num] || 0;
       var s1dName = drivers[s1dIdx] || '';
@@ -1969,7 +2005,7 @@ function renderRacePage() {
         ? '<span style="font-size:11px;color:' + col + ';opacity:.8;margin-left:10px">' + s1dName + '</span>'
         + (s1dIrating ? '<span style="font-size:9px;font-weight:700;color:var(--ye);background:rgba(247,212,79,.15);padding:2px 6px;border-radius:3px;margin-left:6px">' + s1dIrating + '</span>' : '')
         : '';
-      var body = '<div class="rp-card-body">'
+      var body = '<div class="rp-card-body"' + (s1Done ? ' style="opacity:.35;pointer-events:none"' : '') + '>'
         + '<div class="rp-cols">'
         // col: laps to run
         + '<div class="rp-col rp-col-pit">'
@@ -1995,16 +2031,18 @@ function renderRacePage() {
         + '</div>'
         + '</div>'
         + '</div>'  // close rp-cols
-        // GO col — sibling of rp-cols, same as every other stint card
-        + '<div class="rp-col-go" data-go="' + s.num + '">' + rpGoFlag() + '</div>'
+        // GO col — sibling of rp-cols, same as every other stint card. Hidden once done.
+        + (s1Done ? '' : '<div class="rp-col-go" data-go="' + s.num + '">' + rpGoFlag() + '</div>')
         + '</div>'; // close rp-card-body
+      var s1pill = s1Done ? '<span class="rp-done-pill">DONE</span>' : pill;
+      var s1stateClass = s1Done ? ' rp-done' : stateClass;
       var s1hdr = '<div class="rp-card-hdr" data-nav="' + s.num + '" style="cursor:pointer">'
-        + pill
+        + s1pill
         + '<span class="rp-stint-lbl" style="color:' + col + '">Stint ' + s.num + '</span>'
         + s1driverHtml
         + '<span style="margin-left:auto"></span>'
         + '</div>';
-      return '<div class="rp-card' + stateClass + '" id="rpCard' + s.num + '">' + s1hdr + body + '</div>';
+      return '<div class="rp-card' + s1stateClass + '" id="rpCard' + s.num + '">' + s1hdr + body + '</div>';
     }
 
     // ---- Normal card ----
@@ -2348,7 +2386,31 @@ function rpHandleGo(sn) {
       ? parseFloat(rp.actualFuelInCar[sn]) || 0
       : parseFloat(rpPrefillFuelInCar(s)) || 0;
     rp.actualFuelInCar[sn] = lastFuelInCar.toFixed(1);
+    // Calculate actual fuel/lap for the previous stint before completing the
+    // race — this branch used to return early and skip this, so races with
+    // only one pit stop (2 stints total) never recorded actual fuel data,
+    // since the GO into the final stint is the ONLY stint transition there is.
+    if (sn > 1) {
+      var prevS0 = rp.calcStints[siIdx - 1];
+      var actualPitLap0 = rp.manPits[pitKey0];
+      var prevPitLap0 = pitKey0 >= 2 ? (rp.manPits[pitKey0 - 1] || 0) : 0;
+      if (prevS0 && actualPitLap0) {
+        var lapsDriven0 = actualPitLap0 - prevPitLap0;
+        var fuelLoaded0 = prevS0.num === 1 ? rp.startFuel : prevS0.fwm;
+        var fuelUsed0 = fuelLoaded0 - lastFuelInCar;
+        if (lapsDriven0 > 0 && fuelUsed0 > 0) {
+          rp.actualFuelPerLap[prevS0.num] = { laps: lapsDriven0, fuel: fuelUsed0 };
+          var totalLaps0 = 0, totalFuel0 = 0;
+          Object.keys(rp.actualFuelPerLap).forEach(function(k3){
+            totalLaps0 += rp.actualFuelPerLap[parseInt(k3)].laps || 0;
+            totalFuel0 += rp.actualFuelPerLap[parseInt(k3)].fuel || 0;
+          });
+          rp.fuelPerLap = totalLaps0 > 0 ? r2(totalFuel0 / totalLaps0) : rp.fuelPerLap;
+        }
+      }
+    }
     rp.raceCompleted = true;
+    rp.currentStint = sn + 1;
     rpBuildCalcStints();
     renderRacePage();
     if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
@@ -2828,25 +2890,6 @@ function updateRaceStartDisplay(){
   }catch(e){return null;}
 }
 
-function updateFromUTC(){
-  if(_updatingLocal)return;
-  _updatingUTC=true;
-  var dateVal=g('raceDate')?g('raceDate').value:'';
-  var utcH=iv('rsUH'),utcM=iv('rsUM');
-  var tzVal=g('tzSelect')?g('tzSelect').value:'UTC';
-  if(!dateVal){_updatingUTC=false;return;}
-  try{
-    var utcMs=Date.UTC(parseInt(dateVal.slice(0,4)),parseInt(dateVal.slice(5,7))-1,parseInt(dateVal.slice(8,10)),utcH,utcM,0);
-    var fmt=new Intl.DateTimeFormat('en-GB',{timeZone:tzVal,hour:'2-digit',minute:'2-digit',hour12:false});
-    var localStr=fmt.format(new Date(utcMs));
-    var parts=localStr.split(':');
-    var lh=g('rsH'),lm=g('rsM');
-    if(lh)lh.value=parseInt(parts[0]);
-    if(lm)lm.value=parseInt(parts[1]);
-  }catch(e){}
-  _updatingUTC=false;
-  renderDriverPage();
-}
 
 
 // ============================================================
@@ -2854,10 +2897,6 @@ function updateFromUTC(){
 // ============================================================
 var memberDragSrc=null; // 'card' or 'roster', and index
 
-function getMemberRoleColor(m,mi){
-  var idx=(mi!==undefined)?mi:members.indexOf(m);
-  return autoColor(idx<0?0:idx);
-}
 function getMemberRoleBadgeBg(role){
   var map={Driver:'rgba(79,142,247,.15)',Spotter:'rgba(79,142,247,.12)',Engineer:'rgba(62,207,142,.12)',Rest:'rgba(107,113,148,.12)',Standby:'rgba(239,159,39,.12)',Custom:'rgba(247,212,79,.12)'};
   return map[role]||'rgba(247,212,79,.12)';
@@ -3229,13 +3268,17 @@ function renderUtilDonuts(){
   var tot=Math.floor(rSec/lSec),maxSL=Math.floor((tnk-mrg)/fl);
   if(tot<1||maxSL<1){wrap.innerHTML='<div class="empty" style="padding:8px 0;font-size:11px">Check race inputs</div>';return;}
   var stints=buildStints(tot,maxSL,fl,mrg,getStartFuel(tnk));
+  // buildStints allocates against tot+1 (the mandatory lap the car completes
+  // after the race clock hits zero), so the true lap total to divide against
+  // for utilisation % is the sum of all stint laps, not the raw clock-lap tot.
+  var totAlloc=stints.reduce(function(acc,s){return acc+s.laps;},0)||tot;
   var lapsByDriver=drivers.map(function(_,di){
     return stints.reduce(function(acc,s){return acc+((stintDrivers[s.num]||0)===di?s.laps:0);},0);
   });
   var r=28,cx=32,cy=32,stroke=7,circ=2*Math.PI*r;
   wrap.innerHTML=lapsByDriver.map(function(laps,di){
     var col=driverMeta[di]?driverMeta[di].color:PAL[di%PAL.length];
-    var pct=tot>0?laps/tot:0;
+    var pct=totAlloc>0?laps/totAlloc:0;
     var filled=circ*pct,empty=circ-filled;
     var offset=circ*0.25; // start from top
     return '<div class="util-donut-item">'+
@@ -3465,10 +3508,6 @@ function renderRoster(raceStartUtcMs){
 
   wrap.innerHTML=html;
   wireManualBlockDrag(wrap,raceStartUtcMs,rSec,totalMins,timeH,headerH,lSec,stints,timePadTop);
-}
-
-function yToMs(y,raceStartUtcMs,rSec,containerH){
-  return raceStartUtcMs+(y/containerH)*rSec*1000;
 }
 
 function wireManualBlockDrag(wrap,raceStartUtcMs,rSec,totalMins,timeH,headerH,lSec,stints,timePadTop){
@@ -4707,6 +4746,7 @@ function snapshotState() {
     tyreChange: tyreChange,
     manOverride: manOverride,
     tyreOn: tyreOn,
+    tyreCompound: tyreCompound,
     drivers: drivers,
     stintDrivers: stintDrivers,
     members: members,
@@ -4741,6 +4781,8 @@ function restoreState(snap) {
   if (snap.tyreChange) tyreChange = snap.tyreChange;
   if (snap.manOverride) manOverride = snap.manOverride;
   if (snap.tyreOn !== undefined) tyreOn = snap.tyreOn;
+  if (snap.tyreCompound) tyreCompound = snap.tyreCompound;
+  renderCompoundRow();
   if (snap.drivers) drivers = snap.drivers;
   if (snap.stintDrivers) stintDrivers = snap.stintDrivers;
   if (snap.members) members = snap.members;
