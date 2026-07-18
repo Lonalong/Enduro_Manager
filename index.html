@@ -4524,7 +4524,14 @@ document.addEventListener('DOMContentLoaded', function() {
       googleBtn.disabled = true;
       var res = await sb.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + window.location.pathname }
+        options: {
+          redirectTo: window.location.origin + window.location.pathname,
+          // Without this, Google silently reuses whatever Google account is
+          // already active in the browser instead of showing the account
+          // picker — which makes it look like "Continue with Google" can't
+          // switch accounts. Forcing the chooser every time fixes that.
+          queryParams: { prompt: 'select_account' }
+        }
       });
       if (res && res.error) {
         googleBtn.disabled = false;
