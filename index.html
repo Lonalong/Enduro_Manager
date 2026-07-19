@@ -530,6 +530,10 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
         Continue with Google
       </button>
       <div id="authStatusMsg" style="font-size:12px;color:var(--mu);margin-top:12px;min-height:16px"></div>
+      <button id="authGuestBtn" type="button" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-top:10px;border-radius:8px;border:none;background:transparent;color:var(--mu);font-size:12px;cursor:pointer;text-decoration:underline">
+        Continue without an account
+      </button>
+      <div style="font-size:11px;color:var(--mu);margin-top:6px;line-height:1.5">Races are only saved locally on this device without sign in.</div>
     </div>
   </div>
 </div>
@@ -726,7 +730,9 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   <div class="mc"><div class="mv" id="sST">-</div><div class="ml">Stints</div></div>
   <div class="mc"><div class="mv" id="sPS">-</div><div class="ml">Pit stops</div></div>
   <div class="mc"><div class="mv" id="sMS">-</div><div class="ml">Max laps / stint</div></div>
-  <div class="mc"><div class="mv" id="sTyres">-</div><div class="ml">Tyre sets required</div></div>
+  <div class="mc"><div class="mv" id="sTyres">-</div><div class="ml">Tyre sets required</div>
+    <input type="number" id="iMaxTyreSets" min="1" step="1" placeholder="No limit" style="width:100%;margin-top:4px;font-size:10px;padding:2px 4px;text-align:center;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--tx)">
+  </div>
   <div class="mc"><div class="mv" id="sDrivers">-</div><div class="ml">Drivers</div></div>
 </div>
 
@@ -737,14 +743,15 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div style="font-size:10px;margin-bottom:4px;visibility:hidden">&nbsp;</div>
       <div id="pcCoeffGroup" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
         <div class="field" style="margin-bottom:0;width:110px">
-          <label>Fuel weight cost</label>
+          <label>Fuel benefit</label>
           <input class="si pc-benefit" type="number" id="pcFuelCoef" step="0.01" min="0" value="0.025" style="width:110px">
           <div class="hint">sec / liter</div>
         </div>
         <div class="field" style="margin-bottom:0;width:110px">
           <label>Tyre wear cost</label>
-          <input class="si pc-cost" type="number" id="pcTyreCoef" step="0.01" min="0" value="0.03" style="width:110px">
+          <button type="button" class="abtn pc-cost" id="pcEditTyreCurveBtn" style="width:110px;padding:6px 4px;font-size:11px">Edit curve</button>
           <div class="hint">sec / %</div>
+          <input type="hidden" id="pcTyreCurve" value="[0.01,0.015,0.025,0.06,0.16]">
         </div>
       </div>
     </div>
@@ -770,19 +777,18 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
     </div>
     <div>
       <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:4px">Fuel saving</div>
-      <div id="pcSaveGroup" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+      <div id="pcSaveGroup" style="display:flex;gap:8px;align-items:flex-start;flex-wrap:nowrap">
         <div class="field" style="margin-bottom:0;width:150px">
-          <label>Saving lap time</label>
+          <label>Fuel save lap time</label>
           <div class="hms" style="width:150px">
-            <div class="hw"><input class="pc-cost" type="number" id="pcSaveLtH" min="0" max="23" value="0" style="font-size:12px;padding:5px 3px"><span style="font-size:9px">hrs</span></div>
-            <div class="hw"><input class="pc-cost" type="number" id="pcSaveLtM" min="0" max="59" value="1" style="font-size:12px;padding:5px 3px"><span style="font-size:9px">min</span></div>
-            <div class="hw"><input class="pc-cost" type="number" id="pcSaveLtS" min="0" max="59" value="44" style="font-size:12px;padding:5px 3px"><span style="font-size:9px">sec</span></div>
+            <div class="hw"><input class="pc-cost" type="number" id="pcSaveLtH" min="0" max="23" value="0" style="height:32px;box-sizing:border-box"><span>hrs</span></div>
+            <div class="hw"><input class="pc-cost" type="number" id="pcSaveLtM" min="0" max="59" value="1" style="height:32px;box-sizing:border-box"><span>min</span></div>
+            <div class="hw"><input class="pc-cost" type="number" id="pcSaveLtS" min="0" max="59" value="44" style="height:32px;box-sizing:border-box"><span>sec</span></div>
           </div>
-          <div class="hint">absolute lap time on save laps</div>
-        </div>
+          </div>
         <div class="field" style="margin-bottom:0;width:100px">
-          <label>Saving fuel use</label>
-          <input class="si pc-benefit" type="number" id="pcSaveFuelUse" step="0.01" min="0.01" value="3.4" style="width:100px">
+          <label>Fuel use</label>
+          <input class="si pc-benefit" type="number" id="pcSaveFuelUse" step="0.01" min="0.01" value="3.4" style="width:100px;height:32px;box-sizing:border-box">
           <div class="hint">liters / lap</div>
         </div>
       </div>
@@ -1063,6 +1069,20 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 </div>
 <!-- ========== END DRIVER PAGE MODALS ========== -->
 
+<div class="block-modal-overlay" id="curveEditorModal" style="display:none">
+  <div class="block-modal" style="max-width:800px;width:95%">
+    <div class="block-modal-title" id="curveEditorTitle">Curve</div>
+    <svg id="curveEditorSvg" viewBox="0 0 640 420" style="width:100%;height:auto;touch-action:none;display:block;margin-bottom:14px"></svg>
+    <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+      <input type="number" id="curveFlatValue" step="0.001" min="0" value="0.03" style="width:64px;padding:6px 6px;font-size:11px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;color:var(--tx)">
+      <button type="button" class="abtn" id="curveResetBtn" style="color:var(--mu)">Reset to flat</button>
+      <button type="button" class="abtn" id="curveResetDefaultBtn" style="color:var(--mu)">Reset to default</button>
+      <button type="button" class="abtn" id="curveCancelBtn" style="color:var(--mu)">Cancel</button>
+      <button type="button" class="abtn" id="curveSaveBtn" style="background:var(--ac);color:#0d0f14">Done</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var PAL=['#4f8ef7','#f7934f','#3ecf8e','#c97bf7','#f75f9a','#5fd8f7','#8ef74f','#fa9f4f','#fa4f4f','#4ffac8'];
 var COL_GOOD='#3ecf8e',COL_WARN='#ef9f27',COL_TC='#c97bf7';
@@ -1076,7 +1096,8 @@ var drivers=['Driver 1','Driver 2','Driver 3'],stintDrivers={},filterDriver=null
 // currently "active" i.e. shown in the Strategy tab; the `strategies` store below
 // is where the *other* (inactive) strategy's data lives while not being edited.
 var STRAT_INPUT_IDS=['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin','iWarn','iLapsOn',
-  'flO','flM','flI','frO','frM','frI','rlO','rlM','rlI','rrO','rrM','rrI',
+  'flO','flM','flI','frO','frM','frI','rlO','rlM','rlI','rrO','rrM','rrI','iMaxTyreSets',
+  'pcFuelCoef','pcTyreCurve','pcTyreChangeTime','pcRefuelRate','pcOutLapPenalty',
   'pcSaveLtH','pcSaveLtM','pcSaveLtS','pcSaveFuelUse'];
 var strategies={A:null,B:null,C:null};
 var activeStrategy='A';
@@ -1125,6 +1146,231 @@ function fmtSec(t){
 
 // ========== DUAL STRATEGY (A/B) HELPERS ==========
 function clone(o){return JSON.parse(JSON.stringify(o));}
+
+// Piecewise-linear lookup across a 5-point curve (x = 100,75,50,25,0).
+// Used for the fuel-benefit and tyre-wear rate curves — replaces a flat
+// coefficient with a rate that can vary across the fuel/tyre range.
+var CURVE_XS=[100,75,50,25,0];
+var DEFAULT_FUEL_CURVE=[0.025,0.025,0.025,0.025,0.025]; // real-world fuel weight effect is close to linear
+var DEFAULT_TYRE_CURVE=[0.01,0.015,0.025,0.06,0.16]; // fresh->worn: mild wear through mid-life, then an accelerating cliff near the tread limit
+function curveValueAt(curveArr,xPercent){
+  if(!curveArr||curveArr.length!==5)return 0;
+  xPercent=Math.max(0,Math.min(100,xPercent));
+  for(var i=0;i<CURVE_XS.length-1;i++){
+    var x1=CURVE_XS[i],x2=CURVE_XS[i+1];
+    if(xPercent<=x1&&xPercent>=x2){
+      var t=x1===x2?0:(x1-xPercent)/(x1-x2);
+      return curveArr[i]+(curveArr[i+1]-curveArr[i])*t;
+    }
+  }
+  return curveArr[curveArr.length-1];
+}
+function readCurve(id,fallback){
+  var el=g(id);
+  if(!el||!el.value)return clone(fallback);
+  try{
+    var v=JSON.parse(el.value);
+    if(!Array.isArray(v)||v.length!==5)return clone(fallback);
+    // Migration: a curve saved perfectly flat at exactly the old pre-curve
+    // default predates this feature's shaped defaults — nobody would
+    // deliberately drag all 5 points to land on precisely the same value,
+    // so treat it as never customized rather than an intentional flat choice.
+    var isStaleOldDefault=v.every(function(x){return x===0.03;})||v.every(function(x){return x===0.025;});
+    if(isStaleOldDefault)return clone(fallback);
+    return v;
+  }
+  catch(e){return clone(fallback);}
+}
+
+// ========== CURVE EDITOR (fuel benefit / tyre wear rate curves) ==========
+var curveEditorState=null; // {type:'fuel'|'tyre', points:[...], maxY}
+var curveDragIdx=null;
+var CURVE_PAD_L=96,CURVE_PAD_T=30,CURVE_W=510,CURVE_H=280;
+
+function curveEditorPlotX(xPercent){return CURVE_PAD_L+((100-xPercent)/100)*CURVE_W;}
+function curveEditorPlotY(val){
+  var maxY=curveEditorState.maxY;
+  return CURVE_PAD_T+(1-Math.max(0,val)/maxY)*CURVE_H;
+}
+function curveEditorYFromPlot(py){
+  var maxY=curveEditorState.maxY;
+  var frac=1-(py-CURVE_PAD_T)/CURVE_H;
+  return Math.max(0,frac*maxY);
+}
+
+function openCurveEditor(type){
+  var id=type==='fuel'?'pcFuelCurve':'pcTyreCurve';
+  var fallback=type==='fuel'?DEFAULT_FUEL_CURVE:DEFAULT_TYRE_CURVE;
+  var points=readCurve(id,fallback);
+  var maxY=Math.max.apply(null,points)*1.6;
+  if(maxY<0.05)maxY=0.05;
+  var tankCap=type==='fuel'?(fv('iTank')||0):0;
+  curveEditorState={type:type,points:points.slice(),maxY:maxY,tankCap:tankCap};
+  g('curveEditorTitle').textContent=type==='fuel'?'Fuel benefit curve':'Tyre wear cost curve';
+  var avg=points.reduce(function(a,v){return a+v;},0)/points.length;
+  g('curveFlatValue').value=Math.round(avg*1000)/1000;
+  renderCurveEditorSVG();
+  g('curveEditorModal').style.display='flex';
+}
+
+function renderCurveEditorSVG(){
+  var s=curveEditorState;
+  var ns='http://www.w3.org/2000/svg';
+  var svg=g('curveEditorSvg');
+  while(svg.firstChild)svg.removeChild(svg.firstChild);
+  var plotBottom=CURVE_PAD_T+CURVE_H;
+  var mkText=function(x,y,txt,size,anchor,fill,rotate){
+    var t=document.createElementNS(ns,'text');
+    t.setAttribute('x',x);t.setAttribute('y',y);
+    t.setAttribute('font-size',size);t.setAttribute('fill',fill||'#6b7194');
+    t.setAttribute('text-anchor',anchor||'middle');t.setAttribute('font-family','monospace');
+    if(rotate)t.setAttribute('transform','rotate(-90 '+x+' '+y+')');
+    t.textContent=txt;
+    svg.appendChild(t);
+    return t;
+  };
+  // Y axis: vertical line, 3 ticks (0 / mid / max), "Seconds" title rotated
+  var yAxis=document.createElementNS(ns,'line');
+  yAxis.setAttribute('x1',CURVE_PAD_L);yAxis.setAttribute('x2',CURVE_PAD_L);
+  yAxis.setAttribute('y1',CURVE_PAD_T);yAxis.setAttribute('y2',plotBottom);
+  yAxis.setAttribute('stroke','#6b7194');yAxis.setAttribute('stroke-width','1.5');
+  svg.appendChild(yAxis);
+  [0,s.maxY/2,s.maxY].forEach(function(yv){
+    var py=curveEditorPlotY(yv);
+    var tick=document.createElementNS(ns,'line');
+    tick.setAttribute('x1',CURVE_PAD_L-4);tick.setAttribute('x2',CURVE_PAD_L);
+    tick.setAttribute('y1',py);tick.setAttribute('y2',py);
+    tick.setAttribute('stroke','#6b7194');tick.setAttribute('stroke-width','1');
+    svg.appendChild(tick);
+    mkText(CURVE_PAD_L-7,py+3,yv.toFixed(2),8,'end');
+  });
+  mkText(12,CURVE_PAD_T+CURVE_H/2,'Sec per % lost',9,'middle','#e8eaf0',true);
+  // X axis: horizontal line, tick per anchor point, title below
+  var xAxis=document.createElementNS(ns,'line');
+  xAxis.setAttribute('x1',CURVE_PAD_L);xAxis.setAttribute('x2',CURVE_PAD_L+CURVE_W);
+  xAxis.setAttribute('y1',plotBottom);xAxis.setAttribute('y2',plotBottom);
+  xAxis.setAttribute('stroke','#6b7194');xAxis.setAttribute('stroke-width','1.5');
+  svg.appendChild(xAxis);
+  CURVE_XS.forEach(function(xp){
+    var x=curveEditorPlotX(xp);
+    var grid=document.createElementNS(ns,'line');
+    grid.setAttribute('x1',x);grid.setAttribute('x2',x);
+    grid.setAttribute('y1',CURVE_PAD_T);grid.setAttribute('y2',plotBottom);
+    grid.setAttribute('stroke','#2a2f42');grid.setAttribute('stroke-width','1');
+    svg.appendChild(grid);
+    var tickLabel=s.type==='fuel'?r2((xp/100)*(s.tankCap||0))+'L':xp+'%';
+    mkText(x,plotBottom+14,tickLabel,8);
+  });
+  mkText(CURVE_PAD_L+CURVE_W/2,plotBottom+30,s.type==='fuel'?'Litres in tank':'% Tread remaining',9,'middle','#e8eaf0');
+  // Curve line — kept as a live reference so dragging only updates its 'd', not the whole SVG
+  var path=document.createElementNS(ns,'path');
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','var(--ac)');
+  path.setAttribute('stroke-width','2');
+  svg.appendChild(path);
+  s.pathEl=path;
+  // Draggable points + live value labels — kept as live references for the same reason
+  s.circleEls=[];s.labelEls=[];
+  s.points.forEach(function(v,i){
+    var x=curveEditorPlotX(CURVE_XS[i]),y=curveEditorPlotY(v);
+    var circle=document.createElementNS(ns,'circle');
+    circle.setAttribute('cx',x);circle.setAttribute('cy',y);
+    circle.setAttribute('r',7);
+    circle.setAttribute('fill','var(--ac)');
+    circle.setAttribute('stroke','#0d0f14');circle.setAttribute('stroke-width','2');
+    circle.style.cursor='ns-resize';
+    circle.dataset.idx=i;
+    circle.addEventListener('mousedown',curveEditorStartDrag);
+    circle.addEventListener('touchstart',curveEditorStartDrag,{passive:false});
+    svg.appendChild(circle);
+    s.circleEls.push(circle);
+    var label=mkText(x,Math.max(CURVE_PAD_T+8,y-12),v.toFixed(3),9,'middle','var(--tx)');
+    s.labelEls.push(label);
+  });
+  updateCurvePath();
+}
+
+// Recomputes just the connecting line's path data from the current points —
+// cheap (string math, no DOM creation), safe to call on every drag frame.
+function updateCurvePath(){
+  var s=curveEditorState;
+  var pathD='';
+  s.points.forEach(function(v,i){
+    var x=curveEditorPlotX(CURVE_XS[i]),y=curveEditorPlotY(v);
+    pathD+=(i===0?'M':'L')+x+','+y+' ';
+  });
+  if(s.pathEl)s.pathEl.setAttribute('d',pathD);
+}
+
+// Moves just the dragged point's circle + label and updates the path — avoids
+// tearing down and rebuilding the entire SVG on every mousemove, which was
+// the actual cause of drag lag (20+ DOM nodes recreated per frame).
+function updateDraggedPointVisual(idx){
+  var s=curveEditorState;
+  var v=s.points[idx];
+  var x=curveEditorPlotX(CURVE_XS[idx]),y=curveEditorPlotY(v);
+  var circle=s.circleEls[idx];
+  if(circle){circle.setAttribute('cy',y);}
+  var label=s.labelEls[idx];
+  if(label){label.setAttribute('y',Math.max(CURVE_PAD_T+8,y-12));label.textContent=v.toFixed(3);}
+  updateCurvePath();
+}
+
+function curveEditorStartDrag(e){
+  e.preventDefault();
+  curveDragIdx=parseInt(this.dataset.idx);
+  document.addEventListener('mousemove',curveEditorDrag);
+  document.addEventListener('mouseup',curveEditorEndDrag);
+  document.addEventListener('touchmove',curveEditorDrag,{passive:false});
+  document.addEventListener('touchend',curveEditorEndDrag);
+}
+function curveEditorDrag(e){
+  if(curveDragIdx===null)return;
+  e.preventDefault();
+  var svg=g('curveEditorSvg');
+  var rect=svg.getBoundingClientRect();
+  var clientY=e.touches?e.touches[0].clientY:e.clientY;
+  var svgY=(clientY-rect.top)*(420/rect.height); // viewBox height = 420
+  var val=curveEditorYFromPlot(svgY);
+  curveEditorState.points[curveDragIdx]=Math.round(val*1000)/1000;
+  updateDraggedPointVisual(curveDragIdx);
+}
+function curveEditorEndDrag(){
+  curveDragIdx=null;
+  document.removeEventListener('mousemove',curveEditorDrag);
+  document.removeEventListener('mouseup',curveEditorEndDrag);
+  document.removeEventListener('touchmove',curveEditorDrag);
+  document.removeEventListener('touchend',curveEditorEndDrag);
+}
+
+function saveCurveEditor(){
+  var id=curveEditorState.type==='fuel'?'pcFuelCurve':'pcTyreCurve';
+  g(id).value=JSON.stringify(curveEditorState.points);
+  g('curveEditorModal').style.display='none';
+  var t=g('pcStaleTag');if(t)t.style.display='';
+  run();
+}
+function resetCurveEditorToFlat(){
+  var flatVal=parseFloat(g('curveFlatValue').value);
+  if(isNaN(flatVal)||flatVal<0)flatVal=0;
+  curveEditorState.points=[flatVal,flatVal,flatVal,flatVal,flatVal];
+  renderCurveEditorSVG();
+}
+function resetCurveEditorToDefault(){
+  var fallback=curveEditorState.type==='fuel'?DEFAULT_FUEL_CURVE:DEFAULT_TYRE_CURVE;
+  curveEditorState.points=fallback.slice();
+  renderCurveEditorSVG();
+}
+function closeCurveEditor(){
+  g('curveEditorModal').style.display='none';
+}
+(function(){
+  var saveBtn=g('curveSaveBtn');if(saveBtn)saveBtn.addEventListener('click',saveCurveEditor);
+  var resetBtn=g('curveResetBtn');if(resetBtn)resetBtn.addEventListener('click',resetCurveEditorToFlat);
+  var resetDefaultBtn=g('curveResetDefaultBtn');if(resetDefaultBtn)resetDefaultBtn.addEventListener('click',resetCurveEditorToDefault);
+  var cancelBtn=g('curveCancelBtn');if(cancelBtn)cancelBtn.addEventListener('click',closeCurveEditor);
+})();
+// ========== END CURVE EDITOR ==========
 
 // Snapshot the currently-live inputs/manPits/manOverride/tyreOn/stintDrivers into strategies[key]
 function captureStrategy(key){
@@ -1191,6 +1437,7 @@ function copyStrategy(fromKey,toKey){
   if(fromKey===activeStrategy)captureStrategy(fromKey);
   if(!strategies[fromKey]){alert('Strategy '+fromKey+' has nothing to copy yet.');return;}
   strategies[toKey]=clone(strategies[fromKey]);
+  if(window.PaceCost)PaceCost.invalidateCache();
   if(toKey===activeStrategy){
     applyStrategy(toKey);
     run();
@@ -1226,6 +1473,7 @@ function updateRaceStratUI(){
 function switchStrategy(key){
   if(key===activeStrategy)return;
   captureStrategy(activeStrategy);
+  if(window.PaceCost)PaceCost.invalidateCache();
   activeStrategy=key;
   applyStrategy(key);
   updateStrategyTabsUI();
@@ -1381,10 +1629,11 @@ function buildStints(tot,maxSL,fl,mrg,sf){
   return out;
 }
 
-function stintBase(stints,si){
+function stintBase(stints,si,tyreChangeMap){
+  tyreChangeMap=tyreChangeMap||tyreChange;
   var base=100,lsc=0;
   for(var i=0;i<si;i++){
-    if(tyreChange[stints[i].num]){base=100;lsc=0;}
+    if(tyreChangeMap[stints[i].num]){base=100;lsc=0;}
     else{lsc+=stints[i].laps;}
   }
   return {base:base,lsc:lsc};
@@ -1428,7 +1677,11 @@ function run(){
   g('sST').textContent=stints.length;
   g('sPS').textContent=Math.max(0,stints.length-1);
   g('sMS').textContent=maxSL+' L';
-  g('sTyres').textContent=tyreOn?stints.filter(function(s){return tyreChange[s.num];}).length+1:'-';
+  var tyreSetsReq=tyreOn?stints.filter(function(s){return tyreChange[s.num];}).length+1:null;
+  var maxTyreSets=parseInt(fv('iMaxTyreSets'));
+  var sTyresEl=g('sTyres');
+  sTyresEl.textContent=tyreSetsReq!==null?tyreSetsReq:'-';
+  sTyresEl.style.color=(tyreSetsReq!==null&&!isNaN(maxTyreSets)&&maxTyreSets>0&&tyreSetsReq>maxTyreSets)?'var(--re)':'';
   var sd=g('sDrivers');if(sd)sd.textContent=drivers.length;
   var warn=fv('iWarn');
   var shown=filterDriver!==null?stints.filter(function(s){return (stintDrivers[s.num]||0)===filterDriver;}):stints;
@@ -1458,7 +1711,7 @@ function run(){
       '<td>'+dot+'S'+s.num+'</td><td>'+s.st+'</td><td>'+s.end+'</td><td>'+s.laps+'</td>'
       +'<td>'+fStr+'</td><td>'+ep+'</td><td>'+lp+'</td><td>'+mCell+'</td>'
       +'<td><select class="dsel d-sel" data-n="'+s.num+'">'+dOpts+'</select></td>'
-      +fsCell+tyreCol+tcCell+'</tr>';
+      +tyreCol+tcCell+fsCell+'</tr>';
   }).join('');
 
   var allActive=filterDriver===null;
@@ -1473,8 +1726,8 @@ function run(){
     +fBtns+'<button class="abtn" id="resetManPitsBtn" style="margin-left:auto">Reset manual pits</button>'
     +'<button class="abtn" id="autoDistBtn">Auto distribute drivers</button></div>'
     +'<table><thead><tr><th>Stint</th><th>Start</th><th>End</th><th>Laps</th><th>Fuel</th>'
-    +'<th>Earliest pit</th><th>Latest pit</th><th>Manual pit</th><th>Driver</th><th>Fuel save</th>'
-    +(tyreOn?'<th>Tread remaining</th><th>Tyre change</th>':'')
+    +'<th>Earliest pit</th><th>Latest pit</th><th>Manual pit</th><th>Driver</th>'
+    +(tyreOn?'<th>Tread remaining</th><th>Tyre change</th>':'')+'<th>Pace mode</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table>';
 
   g('autoDistBtn').addEventListener('click',function(){autoDistribute(stints);run();});
@@ -1535,7 +1788,7 @@ function run(){
   gantt(stints,tot,tyre);
   // Expose the just-computed strategy for the pace-cost module (read-only use —
   // nothing outside this module mutates these).
-  window.__pcStints=stints;window.__pcTyre=tyre;window.__pcFuelPerLap=fl;window.__pcTank=tnk;window.__pcBaseLap=lSec;window.__pcTyreChange=tyreChange;
+  window.__pcStints=stints;window.__pcTyre=tyre;window.__pcFuelPerLap=fl;window.__pcTank=tnk;window.__pcBaseLap=lSec;window.__pcTyreChange=tyreChange;window.__pcRaceDuration=rSec;
   if(window.PaceCost)PaceCost.onRun();
   // Auto-save to Supabase after every recalculation
   if(currentRaceId){var _snap=snapshotState();scheduleSyncSave(currentRaceId,{_ts:Date.now(),snap:_snap});}
@@ -1673,13 +1926,19 @@ g('tyreToggle').addEventListener('click',function(){
   run();
 });
 
+var _runDebounceTimer=null;
 ['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin','iLapsOn','iWarn',
- 'flO','flM','flI','frO','frM','frI','rlO','rlM','rlI','rrO','rrM','rrI','pcSaveFuelUse'].forEach(function(id){
+ 'flO','flM','flI','frO','frM','frI','rlO','rlM','rlI','rrO','rrM','rrI','pcSaveFuelUse','iMaxTyreSets'].forEach(function(id){
   g(id).addEventListener('input',function(){
     if(id==='iStartFuel')clampStartFuel();
     if(id==='iTank')clampStartFuel();
     if(['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin'].indexOf(id)>-1)manPits={};
-    run();
+    // The full rebuild (stint table, gantt SVG, tyre calc, summary stats) is
+    // expensive — debounce it so typing multiple characters doesn't trigger
+    // a complete rebuild per keystroke. Validation/state resets above stay
+    // synchronous since they're cheap and some UI depends on them immediately.
+    clearTimeout(_runDebounceTimer);
+    _runDebounceTimer=setTimeout(run,150);
   });
 });
 g('iStartFuel').addEventListener('blur',clampStartFuel);
@@ -2811,7 +3070,7 @@ function tickClock(){
   var dateEl=g('utcDate');
   if(dateEl)dateEl.textContent=days[now.getUTCDay()]+' '+now.getUTCDate()+' '+months[now.getUTCMonth()]+' '+now.getUTCFullYear();
   var tzEl=g('tzSelect');
-  if(tzEl){
+  if(tzEl&&tzEl.offsetParent!==null){
     var tz=tzEl.value||'UTC';
     try{
       var localTime=now.toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
@@ -2828,7 +3087,8 @@ function tickClock(){
   }
   // Race countdown / countup — uses cached value, no heavy computation
   var cdWrap=g('raceCountdownWrap'),cdLabel=g('raceCountdownLabel'),cdVal=g('raceCountdown');
-  if(cdWrap&&cdLabel&&cdVal){
+  var stratTabEl=g('tab-strategy');
+  if(cdWrap&&cdLabel&&cdVal&&stratTabEl&&stratTabEl.classList.contains('active')){
     var rSec=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
     if(cachedRaceStartMs&&rSec){
       var raceEndMs2=cachedRaceStartMs+rSec*1000;
@@ -2855,7 +3115,8 @@ function tickClock(){
   }
   // Also update race page countdown if visible
   var rpStrip=g('rpCountdownStrip'),rpLbl=g('rpCdLabel'),rpVal=g('rpCdVal');
-  if(rpStrip&&rpLbl&&rpVal){
+  var raceTabEl=g('tab-race');
+  if(rpStrip&&rpLbl&&rpVal&&raceTabEl&&raceTabEl.classList.contains('active')){
     var rSec2=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
     if(rSec2){
       var remaining, color;
@@ -2877,7 +3138,7 @@ function tickClock(){
   }
   // Mobile countdown — same logic, different elements
   var mobLbl=g('mobCdLabel'),mobVal=g('mobCdVal');
-  if(mobLbl&&mobVal){
+  if(mobLbl&&mobVal&&raceTabEl&&raceTabEl.classList.contains('active')){
     var rSec3=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
     if(rSec3){
       var rem2,col2;
@@ -4961,6 +5222,7 @@ function openRace(id) {
   var data = getRaceData(id);
   resetState();
   if (data.snap) restoreState(data.snap);
+  if (window.PaceCost) PaceCost.invalidateCache();
   // Show race app, hide home
   g('homeScreen').style.display = 'none';
   g('raceApp').style.display = 'block';
@@ -5236,9 +5498,13 @@ checkAuthAndInit();
 var PaceCost=(function(){
   var STRATS=['A','B','C'];
   var results=null; // {A:{stints:[...],total},B:...,C:...,fastestKey}
+  var pcBreakdownData={}; // stintKey -> rows, populated per renderResults(), consumed lazily on details-open
+  var stintDataCache={A:null,B:null,C:null}; // caches getStintsFor() for non-active strategies — reading them requires an expensive temporary full-page swap, so skip it entirely if nothing's changed since last time
+  var isStale=true; // whether current results (if any) are still valid — lets a repeat Compare press skip all work when nothing's changed
   var suppressCheck=false; // true while something is temporarily swapping strategy state via run() for reasons unrelated to a genuine plan edit
+  var badgeRedrawTimer=null; // debounces the (expensive) badge redraw while actively typing — see onRun()
 
-  function coeffs(){return {fuel:fv('pcFuelCoef')||0,tyre:fv('pcTyreCoef')||0,tyreChangeTime:fv('pcTyreChangeTime')||0,refuelRate:fv('pcRefuelRate')||0,outLapPenalty:fv('pcOutLapPenalty')||0};}
+  function coeffs(){return {fuel:fv('pcFuelCoef')||0,tyreChangeTime:fv('pcTyreChangeTime')||0,refuelRate:fv('pcRefuelRate')||0,outLapPenalty:fv('pcOutLapPenalty')||0};}
 
   // Per-lap cost model. Base (average lap time) is treated as the pace at a
   // genuinely full tank, so every lap gets:
@@ -5249,8 +5515,8 @@ var PaceCost=(function(){
   // so the stationary time is whichever of the two takes longer, plus a flat
   // in/out-lap penalty (covers both pit-entry loss and the cold-tyre out-lap).
   // Everything here is backend-only; only the delta between strategies is ever shown.
-  function stintCost(stint,stintIndex,allStints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap){
-    var lscBefore=stintBase(allStints,stintIndex).lsc; // laps since last tyre change, before this stint
+  function stintCost(stint,stintIndex,allStints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap,fuelCurve,tyreCurve){
+    var lscBefore=stintBase(allStints,stintIndex,tyreChangeMap).lsc; // laps since last tyre change, before this stint
     var wearPerLap=(tyre&&tyre.valid)?tyre.wearPerLap:0;
     var isSave=!!stint.isSave;
     var effLapSec=isSave&&saveLapSec>0?saveLapSec:baseLap;
@@ -5260,7 +5526,8 @@ var PaceCost=(function(){
       var fuelInTank=Math.max(0,stint.fwm-(n-1)*effFuelPerLap);
       totalFuelBenefit+=(tankCap-fuelInTank)*c.fuel;
       var treadLostSoFar=Math.min(100,(lscBefore+(n-1))*wearPerLap);
-      totalTyre+=treadLostSoFar*c.tyre;
+      var treadRemaining=Math.max(0,100-treadLostSoFar);
+      totalTyre+=treadLostSoFar*curveValueAt(tyreCurve,treadRemaining);
     }
     var pitCost=0;
     if(stintIndex>0){
@@ -5271,20 +5538,65 @@ var PaceCost=(function(){
       var stationaryTime=Math.max(tyreChanged?c.tyreChangeTime:0,c.refuelRate*litersAdded);
       pitCost=stationaryTime+c.outLapPenalty;
     }
-    return r2(effLapSec*stint.laps+totalTyre-totalFuelBenefit+pitCost);
+    var pace=r2(effLapSec*stint.laps);
+    totalTyre=r2(totalTyre);totalFuelBenefit=r2(totalFuelBenefit);pitCost=r2(pitCost);
+    return {total:r2(pace+totalTyre-totalFuelBenefit+pitCost),pace:pace,tyre:totalTyre,fuelBenefit:totalFuelBenefit,pit:pitCost};
   }
 
-  function strategyStintCosts(stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap){
-    return stints.map(function(s,i){return {num:s.num,cost:stintCost(s,i,stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap)};});
+  function strategyStintCosts(stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap,fuelCurve,tyreCurve){
+    return stints.map(function(s,i){
+      var b=stintCost(s,i,stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap,fuelCurve,tyreCurve);
+      return {num:s.num,cost:b.total,pace:b.pace,tyre:b.tyre,fuelBenefit:b.fuelBenefit,pit:b.pit};
+    });
   }
-  function strategyTotal(costList){
-    return r2(costList.reduce(function(a,x){return a+x.cost;},0));
+
+  // How many laps would this strategy actually complete, given its real pace
+  // (tyre wear, fuel benefit, pit-stop time, fuel-saving rates) — separate
+  // from the fixed lap count buildStints() planned for, which assumes zero
+  // time lost to pit stops or degradation. Walks lap-by-lap, stopping the
+  // moment the running clock would exceed race duration + one buffer lap
+  // (using this strategy's own base pace for that buffer, same convention
+  // buildStints() already uses).
+  function pcLapsCompleted(stints,tyre,c,fuelPerLap,tankCap,baseLap,tyreChangeMap,saveLapSec,saveFuelPerLap,raceDurationSec,fuelCurve,tyreCurve){
+    if(!stints.length||!raceDurationSec)return null;
+    var wearPerLap=(tyre&&tyre.valid)?tyre.wearPerLap:0;
+    var cap=raceDurationSec+baseLap;
+    var elapsed=0,completed=0,elapsedAtCompleted=0;
+    for(var i=0;i<stints.length;i++){
+      var stint=stints[i];
+      var isSave=!!stint.isSave;
+      var effLapSec=isSave&&saveLapSec>0?saveLapSec:baseLap;
+      var effFuelPerLap=isSave&&saveFuelPerLap>0?saveFuelPerLap:fuelPerLap;
+      if(i>0){
+        tyreChangeMap=tyreChangeMap||{};
+        var prevStint=stints[i-1];
+        var tyreChanged=!!tyreChangeMap[prevStint.num];
+        var litersAdded=stint.fuel;
+        var stationaryTime=Math.max(tyreChanged?c.tyreChangeTime:0,c.refuelRate*litersAdded);
+        elapsed+=stationaryTime+c.outLapPenalty;
+        if(elapsed>cap)return {laps:completed,elapsed:elapsedAtCompleted}; // ran out of time mid pit-stop
+      }
+      var lscBefore=stintBase(stints,i,tyreChangeMap).lsc;
+      for(var n=1;n<=stint.laps;n++){
+        var fuelInTank=Math.max(0,stint.fwm-(n-1)*effFuelPerLap);
+        var fuelBenefit=(tankCap-fuelInTank)*c.fuel;
+        var treadLostSoFar=Math.min(100,(lscBefore+(n-1))*wearPerLap);
+        var treadRemaining=Math.max(0,100-treadLostSoFar);
+        var tyreCost=treadLostSoFar*curveValueAt(tyreCurve,treadRemaining);
+        elapsed+=effLapSec+tyreCost-fuelBenefit;
+        if(elapsed>cap)return {laps:completed,elapsed:elapsedAtCompleted}; // this lap would push past the cap
+        completed++;
+        elapsedAtCompleted=elapsed;
+      }
+    }
+    return {laps:completed,elapsed:elapsedAtCompleted};
   }
 
   // Pull the computed stints/tyre/reference values for a given strategy slot
   // without disturbing whatever's currently shown in the UI.
   function getStintsFor(key){
     if(!strategies[key]&&key!==activeStrategy)return null; // slot never filled
+    if(key!==activeStrategy&&stintDataCache[key])return stintDataCache[key]; // no swap needed — already have this
     var out=null;
     withStrategy(key,function(){
       out={
@@ -5293,28 +5605,44 @@ var PaceCost=(function(){
         fuelPerLap:window.__pcFuelPerLap||0,
         tankCap:window.__pcTank||0,
         baseLap:window.__pcBaseLap||0,
-        tyreChangeMap:window.__pcTyreChange||{},
+        tyreChangeMap:window.__pcTyreChange?clone(window.__pcTyreChange):{},
         saveLapSec:hmsToSec(fv('pcSaveLtH')||0,fv('pcSaveLtM')||0,fv('pcSaveLtS')||0),
-        saveFuelPerLap:fv('pcSaveFuelUse')||0
+        saveFuelPerLap:fv('pcSaveFuelUse')||0,
+        raceDuration:window.__pcRaceDuration||0,
+        coeffs:coeffs(),
+        fuelCurve:null,
+        tyreCurve:readCurve('pcTyreCurve',DEFAULT_TYRE_CURVE)
       };
     });
+    if(key!==activeStrategy)stintDataCache[key]=out; // active strategy is never cached — it's already free to read (no swap)
     return out;
   }
 
   function pcCalcAll(){
-    var c=coeffs();
+    if(results&&!isStale)return; // nothing has changed since the last calculation — skip entirely
+    clearTimeout(badgeRedrawTimer);
     var res={};
     suppressCheck=true;
     STRATS.forEach(function(key){
       var data=getStintsFor(key);
       if(!data||!data.stints.length){res[key]=null;return;}
-      var costs=strategyStintCosts(data.stints,data.tyre,c,data.fuelPerLap,data.tankCap,data.baseLap,data.tyreChangeMap,data.saveLapSec,data.saveFuelPerLap);
-      res[key]={stints:costs,total:strategyTotal(costs)};
+      var c=data.coeffs;
+      var costs=strategyStintCosts(data.stints,data.tyre,c,data.fuelPerLap,data.tankCap,data.baseLap,data.tyreChangeMap,data.saveLapSec,data.saveFuelPerLap,data.fuelCurve,data.tyreCurve);
+      var sim=pcLapsCompleted(data.stints,data.tyre,c,data.fuelPerLap,data.tankCap,data.baseLap,data.tyreChangeMap,data.saveLapSec,data.saveFuelPerLap,data.raceDuration,data.fuelCurve,data.tyreCurve);
+      res[key]={stints:costs,baseLap:data.baseLap,lapsCompleted:sim?sim.laps:null,elapsedAtLaps:sim?sim.elapsed:null};
     });
     suppressCheck=false;
-    var fastestKey=null,fastestTotal=Infinity;
+    // Fastest = most laps actually completed (real race classification, not
+    // lowest theoretical cost sum) — tie-broken by whichever took less
+    // elapsed time to reach that same lap count. Total (below) stays the
+    // plain uncapped sum of stint costs regardless of this selection.
+    var fastestKey=null,fastestLaps=-1,fastestElapsed=Infinity;
     STRATS.forEach(function(key){
-      if(res[key]&&res[key].total<fastestTotal){fastestTotal=res[key].total;fastestKey=key;}
+      var r=res[key];
+      if(!r||r.lapsCompleted===null)return;
+      if(r.lapsCompleted>fastestLaps||(r.lapsCompleted===fastestLaps&&r.elapsedAtLaps<fastestElapsed)){
+        fastestLaps=r.lapsCompleted;fastestElapsed=r.elapsedAtLaps;fastestKey=key;
+      }
     });
     res.fastestKey=fastestKey;
     // Index-match every strategy's stints — including the fastest strategy's
@@ -5326,7 +5654,14 @@ var PaceCost=(function(){
       STRATS.forEach(function(key){
         if(!res[key])return;
         res[key].stints.forEach(function(s,i){
-          if(i<fastStints.length){s.delta=r2(s.cost-fastStints[i].cost);}
+          if(i<fastStints.length){
+            var f=fastStints[i];
+            s.delta=r2(s.cost-f.cost);
+            s.paceDelta=r2(s.pace-f.pace);
+            s.tyreDelta=r2(s.tyre-f.tyre);
+            s.pitDelta=r2(s.pit-f.pit);
+            s.fuelDelta=r2(f.fuelBenefit-s.fuelBenefit); // more benefit than fastest = negative (green), matching every other line's sign convention
+          }
           else{s.delta=null;s.extra=true;} // no counterpart — this stint is pure added time
         });
       });
@@ -5338,7 +5673,9 @@ var PaceCost=(function(){
   }
 
   function pcClearAll(){
+    clearTimeout(badgeRedrawTimer);
     results=null;
+    isStale=true;
     var svg=document.querySelector('#gantt svg');
     if(svg)svg.querySelectorAll('.pc-badge').forEach(function(el){el.remove();});
     var tag=g('pcStaleTag');if(tag)tag.style.display='none';
@@ -5347,10 +5684,12 @@ var PaceCost=(function(){
   }
 
   function markStale(){
+    isStale=true;
     var tag=g('pcStaleTag');if(tag)tag.style.display=results?'':'none';
     var panel=g('pcResults');if(panel&&results)panel.style.opacity='0.4';
   }
   function markFresh(){
+    isStale=false;
     var tag=g('pcStaleTag');if(tag)tag.style.display='none';
     var panel=g('pcResults');if(panel)panel.style.opacity='1';
   }
@@ -5384,6 +5723,20 @@ var PaceCost=(function(){
     return {label:label,color:color,val:val};
   }
 
+  function pcBreakdownRows(s){
+    if(s.extra)return [['pace',s.pace],['tyre',s.tyre],['pit',s.pit],['fuel',-s.fuelBenefit]];
+    if(s.delta!==null&&s.delta!==undefined)return [['pace',s.paceDelta],['tyre',s.tyreDelta],['pit',s.pitDelta],['fuel',s.fuelDelta]];
+    return null;
+  }
+  function pcBreakdownHTML(rows){
+    return rows.map(function(r){
+      var val=r[1];
+      var sign=val===0?'\u00b1':(val>0?'+':'-');
+      var color=val===0?'#6b7194':(val>0?'#f75f5f':COL_GOOD);
+      return '<div style="color:'+color+'">'+r[0]+': '+sign+pcFmtSec(Math.abs(val))+'</div>';
+    }).join('');
+  }
+
   function fmtDelta(sec){
     if(sec===null||sec===undefined)return '';
     if(sec===0)return '\u00b1'+pcFmtSec(0);
@@ -5393,6 +5746,7 @@ var PaceCost=(function(){
 
   function renderResults(){
     var el=g('pcResults');if(!el)return;
+    pcBreakdownData={};
     if(!results||!results.fastestKey){
       el.innerHTML='<div class="hint">Fill in at least one strategy and press Calculate.</div>';
       return;
@@ -5402,19 +5756,29 @@ var PaceCost=(function(){
       var r=results[key];
       if(!r)return;
       var isFast=key===results.fastestKey;
+      var fastest=results[results.fastestKey];
+      var lapsBehind=(fastest.lapsCompleted!==null&&r.lapsCompleted!==null)?(fastest.lapsCompleted-r.lapsCompleted):0;
+      var elapsedDelta=(r.elapsedAtLaps!==null&&fastest.elapsedAtLaps!==null)?(r.elapsedAtLaps-fastest.elapsedAtLaps):0;
       var tag=isFast
         ?'<span style="color:'+COL_GOOD+';font-weight:700">Fastest</span>'
-        :'<span style="color:var(--re)">'+fmtDelta(r.total-results[results.fastestKey].total)+' vs fastest</span>';
+        :'<span style="color:var(--re)">'+(lapsBehind>=1?('-'+lapsBehind+' lap'+(lapsBehind>1?'s':'')):fmtDelta(elapsedDelta)+' vs fastest')+'</span>';
       var stintList=r.stints.map(function(s){
         var l=pcLabelFor(s);
-        if(!l)return 'S'+s.num;
-        return 'S'+s.num+' '+l.label;
-      }).join(' &nbsp; ');
+        var summaryText=l?('S'+s.num+' '+l.label):('S'+s.num);
+        var rows=pcBreakdownRows(s);
+        if(!rows)return '<span>'+summaryText+'</span>';
+        var bkey=key+'-'+s.num;
+        pcBreakdownData[bkey]=rows;
+        return '<details style="display:inline-block;vertical-align:top;margin:0 8px 4px 0" data-bkey="'+bkey+'">'
+          +'<summary style="cursor:pointer">'+summaryText+'</summary>'
+          +'<div style="margin:2px 0 0 10px;font-size:9.5px"></div>'
+          +'</details>';
+      }).join(' ');
       html+='<div class="mc" style="flex:1;min-width:180px">'
         +'<div style="font-size:11px;font-weight:700;margin-bottom:4px">Strategy '+key+'</div>'
-        +'<div style="font-size:10px;color:var(--mu);margin-bottom:6px">Total: '+pcFmtSec(r.total)+'</div>'
+        +'<div style="font-size:10px;color:var(--mu);margin-bottom:6px">'+(r.lapsCompleted!==null&&r.lapsCompleted!==undefined?r.lapsCompleted+' laps':'-')+'</div>'
         +'<div style="margin-bottom:6px">'+tag+'</div>'
-        +'<div style="font-size:9px;color:var(--mu);line-height:1.6">'+stintList+'</div>'
+        +'<div style="font-size:11px;color:var(--mu);line-height:1.8">'+stintList+'</div>'
         +'</div>';
     });
     html+='</div>';
@@ -5442,12 +5806,14 @@ var PaceCost=(function(){
     var ns='http://www.w3.org/2000/svg';
     var pL=72; // matches gantt()'s left plot margin
     var op=stale?'0.4':'1';
+    var barsByNum={};
+    svg.querySelectorAll('rect[data-stint]').forEach(function(bar){barsByNum[bar.getAttribute('data-stint')]=bar;});
     stints.forEach(function(s,i){
       var costEntry=r.stints[i];
       if(!costEntry)return;
       var lbl=pcLabelFor(costEntry);
       if(!lbl)return;
-      var bar=svg.querySelector('rect[data-stint="'+s.num+'"]');
+      var bar=barsByNum[s.num];
       if(!bar)return;
       var bx=parseFloat(bar.getAttribute('x')),by=parseFloat(bar.getAttribute('y'));
       var bw=parseFloat(bar.getAttribute('width')),bh=parseFloat(bar.getAttribute('height'));
@@ -5506,6 +5872,24 @@ var PaceCost=(function(){
     });
   }
 
+  // One delegated listener handles every stint's <details> — lazily builds
+  // the breakdown markup only the first time it's actually opened, instead
+  // of every stint's breakdown existing in the DOM immediately on render.
+  (function(){
+    var container=g('pcResults');
+    if(!container)return;
+    container.addEventListener('toggle',function(e){
+      var det=e.target;
+      if(det.tagName!=='DETAILS'||!det.open)return;
+      var bkey=det.dataset.bkey;
+      if(!bkey)return;
+      var box=det.querySelector('div');
+      if(!box||box.dataset.filled)return;
+      var rows=pcBreakdownData[bkey];
+      if(rows){box.innerHTML=pcBreakdownHTML(rows);box.dataset.filled='1';}
+    },true);
+  })();
+
   return {
     onRun:function(){
       if(!results){return;} // nothing calculated yet — nothing to compare or redraw
@@ -5520,11 +5904,16 @@ var PaceCost=(function(){
         return;
       }
       // Anything else reaching here is an edit inside the currently-viewed
-      // strategy — grey out unconditionally, whatever it was. Still redraw the
-      // (now outdated) badges onto the freshly-rebuilt chart, dimmed, rather
-      // than letting them vanish.
+      // strategy — grey out unconditionally, whatever it was, immediately
+      // (cheap). The badge redraw itself is real work (it resyncs every
+      // badge's position against the freshly-rebuilt chart) and run() fires
+      // on every keystroke, so debounce it rather than paying that cost per
+      // key — redraw once typing actually pauses.
       markStale();
-      overlayGanttBadges(true);
+      clearTimeout(badgeRedrawTimer);
+      badgeRedrawTimer=setTimeout(function(){
+        if(results&&results[activeStrategy])overlayGanttBadges(true);
+      },150);
     },
     // Called by switchStrategy() around its run() call — a strategy-tab
     // switch must never be able to mark the badges stale.
@@ -5538,7 +5927,8 @@ var PaceCost=(function(){
       if(results[activeStrategy])overlayGanttBadges(true);
     },
     calc:pcCalcAll,
-    clear:pcClearAll
+    clear:pcClearAll,
+    invalidateCache:function(){stintDataCache={A:null,B:null,C:null};}
   };
 })();
 
@@ -5547,10 +5937,12 @@ var PaceCost=(function(){
   if(btn)btn.addEventListener('click',function(){PaceCost.calc();});
   var clearBtn=g('pcClearBtn');
   if(clearBtn)clearBtn.addEventListener('click',function(){PaceCost.clear();});
-  ['pcFuelCoef','pcTyreCoef','pcTyreChangeTime','pcRefuelRate','pcOutLapPenalty','pcSaveLtH','pcSaveLtM','pcSaveLtS','pcSaveFuelUse'].forEach(function(id){
+  ['pcFuelCoef','pcTyreChangeTime','pcRefuelRate','pcOutLapPenalty','pcSaveLtH','pcSaveLtM','pcSaveLtS','pcSaveFuelUse'].forEach(function(id){
     var el=g(id);
     if(el)el.addEventListener('input',function(){var t=g('pcStaleTag');if(t)t.style.display='';});
   });
+  var tyreCurveBtn=g('pcEditTyreCurveBtn');
+  if(tyreCurveBtn)tyreCurveBtn.addEventListener('click',function(){openCurveEditor('tyre');});
 })();
 // ========== END PACE COST MODULE ==========
 
