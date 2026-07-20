@@ -201,14 +201,57 @@ code{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1
     </div>
 
     <h3 id="s3-5">3.5 Comparing strategy time cost</h3>
-    <p>The Time cost settings panel, just above the stint table, estimates how much slower or faster each strategy (A, B, C) actually is in total race time — not just fuel or laps, but a modeled time cost per stint based on tyre wear, fuel weight, and pit stop duration.</p>
+    <p>The Time cost settings panel, just above the stint table, estimates how much slower or faster each strategy (A, B, C) actually is in total race time — not just fuel or laps, but a modeled time cost per stint based on tyre wear, fuel weight, and pit stop duration. Each strategy keeps its own copy of every setting below, so a "conservative" plan and an "aggressive" plan can genuinely use different tyre and fuel assumptions rather than sharing one global set of numbers.</p>
     <ul>
-      <li><b>Fuel weight cost</b> — seconds lost per litre of fuel still in the tank; a fuller tank is heavier and slower, so this rewards strategies that run lighter for longer.</li>
-      <li><b>Tyre wear cost</b> — seconds lost per percent of tread already worn away; more laps on worn tyres costs more time as the stint goes on.</li>
+      <li><b>Fuel benefit</b> — seconds gained per litre the car is running lighter than a full tank; this is what rewards a strategy that burns fuel down before its next stop instead of topping up early.</li>
+      <li><b>Tyre wear curve</b> — instead of a single flat number, tyre cost is now a curve: click "Edit curve" to open an editor with five draggable points from fresh (100% tread) to fully worn (0%). The default shape stays nearly flat for the first half of a tyre's life, then rises sharply near the end — matching how real tyre degradation behaves (see sourcing below).</li>
       <li><b>Tyre change / Refuel rate / In-out lap</b> — the stationary time modeled for a pit stop: whichever of tyre-change time or refuel time is longer (they happen in parallel), plus a flat penalty for the in-lap and out-lap.</li>
+      <li><b>Fuel saving</b> — a slower, fuel-efficient lap time and its reduced fuel-per-lap rate. Toggle the green/grey slider in the stint table's "Pace mode" column to flag a stint as fuel-saving; its length and fuel use recalculate using these numbers instead of the normal pace.</li>
     </ul>
-    <p>Fill in these six numbers to match your car and pit crew, then click "Compare time cost." The panel needs at least one strategy with a completed stint plan to compare — build out Strategy A and B (and C, if you're using it) first.</p>
-    <p>The same comparison also overlays small coloured pills directly onto the gantt chart for whichever strategy is currently on screen — green for a stint that's losing less time than the fastest strategy's equivalent stint, red for one losing more, and a neutral "&plusmn;" for an exact tie (the fastest strategy always ties itself).</p>
+    <p>Fill these in to match your car and pit crew, then click "Compare time cost." The panel needs at least one strategy with a completed stint plan to compare — build out Strategy A and B (and C, if you're using it) first.</p>
+    <p>The comparison works by simulating each strategy lap-by-lap for the full race duration and counting how many laps it actually completes — not by adding up a single "total time" figure. The <b>Fastest</b> strategy is whichever one completes the most laps; if two strategies complete the same number of laps, the tiebreaker is which one reaches that lap count sooner. Every other strategy shows its gap as either a lap deficit ("&minus;2 laps") or a time gap at an equal lap count, whichever applies.</p>
+    <p>Click the small arrow on any stint row in the results to expand a per-stint breakdown — pace cost, tyre cost, pit cost, and fuel benefit for that specific stint, so you can see exactly which part of a strategy is costing or saving time rather than just the stint's total.</p>
+    <div class="callout note">
+      <div class="callout-lbl">Where these defaults come from</div>
+      <p>The starting values aren't arbitrary — they're built from commonly-cited motorsport engineering figures, then adapted for a GT3 endurance context:</p>
+      <ul>
+        <li><b>Fuel weight effect</b> — published rule-of-thumb figures from F1 and sports car strategy analysis put the lap time cost of extra fuel weight in roughly the 0.01&ndash;0.045 seconds per kilogram range depending on car and track (see discussion threads on <i>Autosport's Technical Forum</i>, and typical figures quoted by sim-racing fuel calculators for GT3-class cars). Converted from kilograms to litres using petrol's density (&asymp;0.75 kg/L) and scaled down for a heavier, higher-drag GT3 car, this lands the default fuel benefit at a modest per-litre figure rather than the sharper numbers seen in open-wheel racing.</li>
+        <li><b>Tyre wear curve shape</b> — sim-racing fuel and stint calculators commonly cite lap times increasing by roughly 0.5&ndash;2 seconds per lap as a tyre stint wears on, but that number is not constant across the stint: degradation is widely described as staying fairly flat for the first half of a tyre's life before rising sharply near the end. The default five-point curve reflects that shape — small, near-flat values from 100% down to 50% tread, then a steep climb from 25% to 0% — rather than the single flat number the app used before the curve editor existed.</li>
+      </ul>
+      <p>Treat these as a sensible starting point, not gospel — every number and every point on the curve is editable per strategy, so replace them with your own car's real data as soon as you have it (pit crew timing sheets, or lap time deltas pulled from telemetry across a stint).</p>
+    </div>
+    <div class="shot-wrap"><svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;display:block;margin:14px auto;background:#151820;border:1px solid #2a2f42;border-radius:8px">
+  <!-- axes -->
+  <line x1="90" y1="30" x2="90" y2="240" stroke="#2a2f42" stroke-width="1"/>
+  <line x1="90" y1="240" x2="580" y2="240" stroke="#2a2f42" stroke-width="1"/>
+  <!-- y axis label -->
+  <text x="20" y="135" fill="#6b7194" font-size="11" font-family="monospace" transform="rotate(-90 20 135)">Sec per % lost</text>
+  <!-- x axis label -->
+  <text x="330" y="272" fill="#6b7194" font-size="11" font-family="monospace" text-anchor="middle">% tread remaining</text>
+  <!-- x ticks (100,75,50,25,0 left to right = worn to fresh direction reversed) -->
+  <text x="90" y="256" fill="#6b7194" font-size="10" font-family="monospace" text-anchor="middle">100</text>
+  <text x="212" y="256" fill="#6b7194" font-size="10" font-family="monospace" text-anchor="middle">75</text>
+  <text x="335" y="256" fill="#6b7194" font-size="10" font-family="monospace" text-anchor="middle">50</text>
+  <text x="457" y="256" fill="#6b7194" font-size="10" font-family="monospace" text-anchor="middle">25</text>
+  <text x="580" y="256" fill="#6b7194" font-size="10" font-family="monospace" text-anchor="middle">0</text>
+  <!-- curve: points at (100,0.01)(75,0.015)(50,0.025)(25,0.06)(0,0.16), y scaled 0-0.17 range -->
+  <polyline points="90,225.9 212,222.9 335,209.4 457,131.8 580,10" fill="none" stroke="#4f8ef7" stroke-width="2.5"/>
+  <circle cx="90" cy="225.9" r="4" fill="#4f8ef7"/>
+  <circle cx="212" cy="222.9" r="4" fill="#4f8ef7"/>
+  <circle cx="335" cy="209.4" r="4" fill="#4f8ef7"/>
+  <circle cx="457" cy="131.8" r="4" fill="#4f8ef7"/>
+  <circle cx="580" cy="10" r="4" fill="#f75f5f"/>
+  <!-- labels for value points -->
+  <text x="90" y="212" fill="#e8eaf0" font-size="10" font-family="monospace" text-anchor="middle">0.010</text>
+  <text x="212" y="210" fill="#e8eaf0" font-size="10" font-family="monospace" text-anchor="middle">0.015</text>
+  <text x="335" y="197" fill="#e8eaf0" font-size="10" font-family="monospace" text-anchor="middle">0.025</text>
+  <text x="457" y="118" fill="#e8eaf0" font-size="10" font-family="monospace" text-anchor="middle">0.060</text>
+  <text x="565" y="26" fill="#f75f5f" font-size="10" font-family="monospace" text-anchor="end">0.160</text>
+  <!-- region labels -->
+  <text x="150" y="50" fill="#3ecf8e" font-size="10" font-family="monospace">fresh — nearly flat</text>
+  <text x="470" y="55" fill="#f75f5f" font-size="10" font-family="monospace">the "cliff" near end of life</text>
+</svg></div>
+    <p class="caption">The default tyre wear curve shape — flat through the first half of tyre life, then a sharp rise near the end.</p>
     <div class="callout tip">
       <div class="callout-lbl">Tip</div>
       <ul>
@@ -235,7 +278,7 @@ code{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1
     <h3 id="s4-1">4.1 Race info and timing</h3>
     <ul>
       <li>Give the race a track name at the top left — this also appears on the race card on your home screen.</li>
-      <li>The live time panel shows current UTC alongside your local time — useful when coordinating a crew across timezones.</li>
+      <li>Right below Track, pick a <b>Car</b> from the dropdown (every current iRacing GT3) or choose "Custom&hellip;" to type any other car — this also appears on the race card on your home screen, above the date.</li>
       <li>Set race start date, time, and timezone on the right — the app calculates the exact race end time in both local and UTC.</li>
     </ul>
     <div class="callout note">
@@ -256,8 +299,38 @@ code{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1
     </ul>
 
     <h3 id="s4-3">4.3 The race roster</h3>
-    <p>Once a timezone is set and drivers are assigned, the roster renders the schedule as a timeline — one column per crew member, coloured blocks for each stint, plotted against local and UTC time.</p>
+    <p>Once a timezone is set and drivers are assigned, the roster renders the schedule as a timeline — one column per crew member, coloured blocks for each stint, plotted against local and UTC time down the side.</p>
     <p>Click a stint block to open its detail modal — add a free-text note (e.g. "push hard", "save tyres") and see driver, time window, duration, laps, and fuel at a glance.</p>
+    <p>The timeline doesn't start at the green flag — it starts 30 minutes <i>before</i> it. That lead-in is deliberate space for everything that happens before racing actually begins: driver briefing, grid formation, final checks. Stint 1 always begins 30 minutes down from the top of the grid, never at the very top.</p>
+    <div class="shot-wrap"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;display:block;margin:14px auto;background:#151820;border:1px solid #2a2f42;border-radius:8px">
+  <!-- main timeline -->
+  <line x1="40" y1="110" x2="600" y2="110" stroke="#2a2f42" stroke-width="2"/>
+  <!-- buffer zone -->
+  <rect x="40" y="90" width="130" height="40" fill="#4f8ef71a" stroke="#4f8ef7" stroke-width="1" stroke-dasharray="4 3" rx="4"/>
+  <text x="105" y="70" fill="#4f8ef7" font-size="11" font-family="monospace" text-anchor="middle">30-min buffer</text>
+  <!-- racing zone -->
+  <rect x="170" y="90" width="400" height="40" fill="#3ecf8e1a" stroke="#3ecf8e" stroke-width="1" rx="4"/>
+  <text x="370" y="70" fill="#3ecf8e" font-size="11" font-family="monospace" text-anchor="middle">racing — Stint 1, Stint 2, Stint 3 ...</text>
+  <!-- event start marker -->
+  <circle cx="40" cy="110" r="5" fill="#e8eaf0"/>
+  <text x="40" y="150" fill="#e8eaf0" font-size="11" font-family="monospace" text-anchor="middle" font-weight="bold">Event start</text>
+  <text x="40" y="165" fill="#6b7194" font-size="9" font-family="monospace" text-anchor="middle">(what you type in)</text>
+  <!-- stint 1 start marker -->
+  <circle cx="170" cy="110" r="5" fill="#3ecf8e"/>
+  <text x="170" y="150" fill="#3ecf8e" font-size="11" font-family="monospace" text-anchor="middle" font-weight="bold">Green flag</text>
+  <text x="170" y="165" fill="#6b7194" font-size="9" font-family="monospace" text-anchor="middle">Stint 1 begins</text>
+  <!-- race end marker -->
+  <circle cx="600" cy="110" r="5" fill="#e8eaf0"/>
+  <text x="600" y="150" fill="#e8eaf0" font-size="11" font-family="monospace" text-anchor="middle" font-weight="bold">Race end</text>
+  <!-- example custom block inside the buffer -->
+  <rect x="52" y="96" width="60" height="28" fill="#f7d44f33" stroke="#f7d44f" stroke-width="1.5" stroke-dasharray="3 2" rx="3"/>
+  <text x="82" y="35" fill="#f7d44f" font-size="10" font-family="monospace" text-anchor="middle">Driver briefing</text>
+  <text x="82" y="49" fill="#6b7194" font-size="9" font-family="monospace" text-anchor="middle">(custom slot)</text>
+  <line x1="82" y1="55" x2="82" y2="94" stroke="#f7d44f" stroke-width="1" stroke-dasharray="2 2"/>
+</svg></div>
+    <p class="caption">The 30-minute buffer sits between the time you set and the first stint — custom slots can go anywhere in it.</p>
+    <p>To schedule something in that window — or anywhere else on the timeline — either click directly on a member's column to drop a new slot at that time, or drag a member's card from the crew list onto the schedule. Both open the same "Add slot" modal: give it a label (e.g. "Driver briefing", "Fuelling", "On comms"), an optional longer note, a colour, and a start/end time. An existing slot can be dragged to move it, dragged from its top or bottom edge to resize it, or clicked to edit or delete it.</p>
+    <p>A slot turns red and won't save if it overlaps something else already on that member's timeline — either another custom slot or one of their driving stints. Each member's own timezone (if set on their crew card) shows alongside the race's local time inside both stint blocks and custom slots, so a crew spread across time zones can each read their own schedule correctly.</p>
   </section>
 
   <section id="s5">

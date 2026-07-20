@@ -98,7 +98,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .rs-field{display:flex;flex-direction:column;gap:3px}
 .rs-field label{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.07em}
 .rs-hm{display:flex;gap:4px;align-items:center}
-.rs-hm input{width:48px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:inherit;font-size:14px;font-weight:600;padding:7px 4px;text-align:center;outline:none;transition:border .15s}
+.rs-hm input{flex:1;min-width:0;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:inherit;font-size:14px;font-weight:600;padding:7px 4px;text-align:center;outline:none;transition:border .15s}
 .rs-hm input:focus{border-color:var(--ac)}
 .rs-hm span{font-size:11px;color:var(--mu)}
 .rs-sep{width:1px;height:28px;background:var(--bd);margin:0 4px;align-self:flex-end;margin-bottom:2px}
@@ -109,11 +109,11 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .rsd-val{font-size:12px;color:var(--ye);font-weight:600;white-space:nowrap}
 /* Crew list */
 .member-list-wrap{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:12px}
-.member-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;padding-top:4px;align-items:flex-start}
+.member-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;padding-top:4px;align-items:flex-start;contain:layout paint}
 .member-scroll::-webkit-scrollbar{height:4px}
 .member-scroll::-webkit-scrollbar-track{background:var(--bg)}
 .member-scroll::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
-.mcard{background:var(--s2);border:1px solid var(--bd);border-radius:8px;width:160px;flex-shrink:0;overflow:hidden;transition:border-color .2s;cursor:grab;display:flex;flex-direction:column}
+.mcard{background:var(--s2);border:1px solid var(--bd);border-radius:8px;width:160px;flex-shrink:0;overflow:hidden;transition:border-color .2s;cursor:grab;display:flex;flex-direction:column;contain:layout style paint}
 .mcard:active{cursor:grabbing}
 .mcard.dragging{opacity:.35}
 .mcard.drag-over{border-color:var(--ac)}
@@ -149,7 +149,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .util-donut-pct{font-size:12px;font-weight:700}
 /* Race roster (vertical, full width) */
 .roster-panel{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px}
-.roster-block{position:absolute;border-radius:4px;overflow:hidden;cursor:pointer;transition:filter .15s,box-shadow .15s}
+.roster-block{position:absolute;border-radius:4px;overflow:hidden;cursor:pointer;transition:filter .15s,box-shadow .15s;contain:layout style paint}
 .roster-block:hover{filter:brightness(1.12);box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .roster-drop-zone.drag-over-active{background:rgba(79,142,247,.1) !important;outline:1px dashed var(--ac)}
 /* Block edit modal */
@@ -186,8 +186,8 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .rp-strat-btn{padding:6px 14px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--mu);transition:all .15s}
 .rp-strat-btn.active{background:var(--ac);color:#0d0f14}
 .rp-strat-btn+.rp-strat-btn{border-left:1px solid var(--bd)}
-.rp-cards{display:flex;flex-direction:column;gap:2px}
-.rp-card{background:transparent;border:1px solid transparent;border-radius:10px;overflow:hidden;width:100%}
+.rp-cards{display:flex;flex-direction:column;gap:2px;contain:layout paint}
+.rp-card{background:transparent;border:1px solid transparent;border-radius:10px;overflow:hidden;width:100%;contain:layout style paint}
 .rp-card.rp-now{border-color:var(--ac);background:var(--sf)}
 .rp-card.rp-viewing{border-color:var(--ac);background:var(--sf)}
 .rp-card.rp-done{opacity:.35;pointer-events:none}
@@ -195,7 +195,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .rp-card.rp-now .rp-card-hdr,.rp-card.rp-viewing .rp-card-hdr{border-top:none}
 .rp-now-pill{background:var(--ac);color:var(--bg);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px}
 .rp-done-pill{background:var(--mu);color:var(--bg);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px}
-.rp-completed-card{background:var(--sf);border:1px solid var(--tg);border-radius:10px;overflow:hidden;width:100%;margin-top:8px}
+.rp-completed-card{background:var(--sf);border:1px solid var(--tg);border-radius:10px;overflow:hidden;width:100%;margin-top:8px;contain:layout style paint}
 .rp-completed-hdr{display:flex;align-items:center;padding:10px 18px;border-bottom:1px solid var(--bd);background:var(--bg);gap:10px}
 .rp-completed-pill{background:var(--tg);color:var(--bg);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px}
 .rp-completed-body{padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
@@ -817,8 +817,8 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 
 <!-- ========== DRIVER PAGE HTML ========== -->
 
-  <!-- Row 1: equal width three columns -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch">
+  <!-- Row 1: equal width two columns -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch">
 
     <!-- Race info -->
     <div class="panel" style="display:flex;flex-direction:column">
@@ -826,6 +826,27 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
         <div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Track</div>
         <input id="trackName" type="text" placeholder="e.g. Mount Panorama" style="width:100%;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--tx);font-family:inherit;font-size:16px;font-weight:700;outline:none;padding:1px 0;transition:border-color .15s" onfocus="this.style.borderColor='var(--bd)'" onblur="this.style.borderColor='transparent'">
+      </div>
+      <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+        <div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Car</div>
+        <select id="raceCar" class="si" style="cursor:pointer;width:100%;margin-bottom:0" onchange="onRaceCarChange()">
+          <option value="">— Select a car —</option>
+          <optgroup label="GT3">
+            <option value="Aston Martin Vantage GT3 EVO">Aston Martin Vantage GT3 EVO</option>
+            <option value="Acura NSX GT3 EVO 22">Acura NSX GT3 EVO 22</option>
+            <option value="Audi R8 LMS GT3 EVO II">Audi R8 LMS GT3 EVO II</option>
+            <option value="BMW M4 GT3">BMW M4 GT3</option>
+            <option value="Chevrolet Corvette Z06 GT3.R">Chevrolet Corvette Z06 GT3.R</option>
+            <option value="Ferrari 296 GT3">Ferrari 296 GT3</option>
+            <option value="Ford Mustang GT3">Ford Mustang GT3</option>
+            <option value="Lamborghini Huracan GT3 EVO">Lamborghini Huracán GT3 EVO</option>
+            <option value="McLaren 720S GT3 EVO">McLaren 720S GT3 EVO</option>
+            <option value="Mercedes-AMG GT3 EVO">Mercedes-AMG GT3 EVO</option>
+            <option value="Porsche 911 GT3 R (992)">Porsche 911 GT3 R (992)</option>
+          </optgroup>
+          <option value="__custom__">Custom…</option>
+        </select>
+        <input id="raceCarCustom" type="text" placeholder="Type your car" style="display:none;margin-top:6px;width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:inherit;font-size:13px;font-weight:600;padding:7px 9px;outline:none">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1">
         <div style="padding:8px 12px 8px 0;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd)">
@@ -843,27 +864,6 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
         <div style="padding:8px 0 0 12px">
           <div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Drivers</div>
           <div style="font-size:18px;font-weight:700;color:var(--tx);line-height:1" id="dpDrivers">-</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Live time (middle) -->
-    <div class="panel" style="display:flex;flex-direction:column">
-      <div class="pt">Live time</div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:space-evenly">
-        <div>
-          <div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">UTC</div>
-          <div class="utc-clock" id="utcClock" style="display:block;width:100%;font-size:clamp(26px,3.2vw,42px);color:var(--ac);line-height:1">--:--:--</div>
-          <div class="utc-date" id="utcDate" style="color:var(--mu);margin-top:4px;font-size:11px">-- --- ----</div>
-        </div>
-        <div style="padding-top:14px;border-top:1px solid var(--bd)">
-          <div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px" id="localTzLabel">Local</div>
-          <div class="utc-clock" id="localClock" style="display:block;width:100%;font-size:clamp(26px,3.2vw,42px);color:var(--tg);line-height:1">--:--:--</div>
-          <div class="utc-date" id="localDateLabel" style="color:var(--mu);margin-top:4px;font-size:11px">-- --- ----</div>
-        </div>
-        <div style="padding-top:14px;border-top:1px solid var(--bd)" id="raceCountdownWrap">
-          <div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px" id="raceCountdownLabel">Race</div>
-          <div style="font-size:clamp(14px,2vw,20px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums" id="raceCountdown">--</div>
         </div>
       </div>
     </div>
@@ -916,31 +916,33 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
           </optgroup>
         </select>
       </div>
-      <div class="rs-input-row">
-        <div class="rs-field">
-          <label>Date (local)</label>
-          <input type="date" id="raceDate" style="background:var(--s2);border:1px solid var(--ac);border-radius:5px;color:var(--tx);font-family:inherit;font-size:13px;font-weight:600;padding:7px 9px;outline:none;cursor:pointer;width:100%;color-scheme:dark">
-        </div>
-        <div class="rs-field">
-          <label>Start (local)</label>
-          <div class="rs-hm">
-            <input type="number" id="rsH" min="0" max="23" value="11" placeholder="HH">
-            <span>:</span>
-            <input type="number" id="rsM" min="0" max="59" value="0" placeholder="MM">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div class="rs-field" style="margin-bottom:8px">
+            <label>Date (local)</label>
+            <input type="date" id="raceDate" style="background:var(--s2);border:1px solid var(--ac);border-radius:5px;color:var(--tx);font-family:inherit;font-size:13px;font-weight:600;padding:7px 9px;outline:none;cursor:pointer;width:100%;color-scheme:dark">
+          </div>
+          <div class="rs-field">
+            <label>Start (local)</label>
+            <div class="rs-hm">
+              <input type="number" id="rsH" min="0" max="23" value="11" placeholder="HH">
+              <span>:</span>
+              <input type="number" id="rsM" min="0" max="59" value="0" placeholder="MM">
+            </div>
           </div>
         </div>
-      </div>
-      <div class="rs-input-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)">
-        <div class="rs-field">
-          <label style="color:#4f8ef7cc">Date (UTC)</label>
-          <input type="date" id="raceDateUTC" style="background:var(--s2);border:1px solid #4f8ef7aa;border-radius:5px;color:#4f8ef7cc;font-family:inherit;font-size:13px;font-weight:600;padding:7px 9px;outline:none;cursor:pointer;width:100%;color-scheme:dark">
-        </div>
-        <div class="rs-field">
-          <label style="color:#4f8ef7cc">Start (UTC)</label>
-          <div class="rs-hm">
-            <input type="number" id="rsUH" min="0" max="23" placeholder="HH" style="background:var(--s2);border:1px solid #4f8ef7aa;border-radius:5px;color:#4f8ef7cc;font-family:inherit;font-size:14px;font-weight:600;padding:7px 4px;text-align:center;outline:none;width:100%">
-            <span style="color:#4f8ef7cc;font-size:14px;font-weight:600">:</span>
-            <input type="number" id="rsUM" min="0" max="59" placeholder="MM" style="background:var(--s2);border:1px solid #4f8ef7aa;border-radius:5px;color:#4f8ef7cc;font-family:inherit;font-size:14px;font-weight:600;padding:7px 4px;text-align:center;outline:none;width:100%">
+        <div style="border-left:1px solid var(--bd);padding-left:16px">
+          <div class="rs-field" style="margin-bottom:8px">
+            <label style="color:#4f8ef7cc">Date (UTC)</label>
+            <input type="date" id="raceDateUTC" style="background:var(--s2);border:1px solid #4f8ef7aa;border-radius:5px;color:#4f8ef7cc;font-family:inherit;font-size:13px;font-weight:600;padding:7px 9px;outline:none;cursor:pointer;width:100%;color-scheme:dark">
+          </div>
+          <div class="rs-field">
+            <label style="color:#4f8ef7cc">Start (UTC)</label>
+            <div class="rs-hm">
+              <input type="number" id="rsUH" min="0" max="23" placeholder="HH" style="background:var(--s2);border:1px solid #4f8ef7aa;border-radius:5px;color:#4f8ef7cc;font-family:inherit;font-size:14px;font-weight:600;padding:7px 4px;text-align:center;outline:none;width:100%">
+              <span style="color:#4f8ef7cc;font-size:14px;font-weight:600">:</span>
+              <input type="number" id="rsUM" min="0" max="59" placeholder="MM" style="background:var(--s2);border:1px solid #4f8ef7aa;border-radius:5px;color:#4f8ef7cc;font-family:inherit;font-size:14px;font-weight:600;padding:7px 4px;text-align:center;outline:none;width:100%">
+            </div>
           </div>
         </div>
       </div>
@@ -1616,8 +1618,9 @@ function buildStints(tot,maxSL,fl,mrg,sf){
     // fuel-saving rate for a flagged stint, or the normal planned rate.
     var effFl=isSave&&saveFl>0?saveFl:fl;
     var stintFl=afl&&afl.drivenStints&&num>afl.drivenStints?afl.fpl:effFl;
-    var fuel=r2(laps*stintFl),fwm=r2(fuel+mrg),isLast=end>=totB;
+    var fuel=r2(laps*stintFl),fwm=r2(fuel+mrg),isLast=isM?(end>=tot):(end>=totB);
     out.push({num:num,st:st,end:end,ae:ae,laps:laps,fuel:fuel,fwm:fwm,ep:null,lp:null,isLast:isLast,isM:isM,isDriven:afl&&num<=afl.drivenStints,isSave:isSave});
+    if(isM&&end>=tot)break; // real data confirms the race is done here — don't project a phantom stint after it
     lap=end+1;num++;
   }
   var n=out.length;
@@ -2071,7 +2074,8 @@ var rp = {
   margin: 0,
   totalLaps: 0,
   raceCompleted: false,
-  raceGoStartMs: null
+  raceGoStartMs: null,
+  _goHistory: []
 };
 
 // Watches a .rp-cols element's own width; once it can't comfortably fit six
@@ -2085,8 +2089,19 @@ function rpObserveNarrow(el) {
     el.classList.toggle('rp-narrow', width > 0 && width < 700);
   };
   if (win.ResizeObserver) {
-    var ro = new win.ResizeObserver(function (entries) { check(entries[0].contentRect.width); });
-    ro.observe(el);
+    // One shared observer per window, reused across every card and every
+    // re-render — not a fresh instance per element per call. Detached
+    // elements (removed by the next full innerHTML rewrite) simply stop
+    // firing and get garbage collected along with the rest of the old DOM;
+    // there's no ongoing per-element bookkeeping cost left behind.
+    if (!win._rpNarrowObserver) {
+      win._rpNarrowObserver = new win.ResizeObserver(function (entries) {
+        entries.forEach(function (entry) {
+          entry.target.classList.toggle('rp-narrow', entry.contentRect.width > 0 && entry.contentRect.width < 700);
+        });
+      });
+    }
+    win._rpNarrowObserver.observe(el);
   } else {
     check(el.getBoundingClientRect().width);
   }
@@ -2127,6 +2142,43 @@ function rpGoFlag() {
 }
 
 // Mirrors buildStints exactly — rp.manPits works same as manPits in strategy
+// Reverses exactly what completing the race mutated — manPits, pendingPit,
+// actualFuelInCar, actualFuelPerLap, fuelPerLap, currentStint, viewStint —
+// restoring the true pre-completion state rather than only flipping the
+// raceCompleted flag back and leaving that data permanently changed.
+// Pops and restores the most recent pre-GO snapshot — shared by both the
+// race-complete undo and the regular stint-back undo, so both use the same
+// verified-correct restore logic. Using a stack (one push per GO press)
+// rather than a single slot is what makes repeated Undo presses correctly
+// walk back through multiple stints instead of only reversing the very
+// last GO and then falling back to fragile guesswork after that.
+function rpRestoreFromPreGoSnapshot() {
+  if (!rp._goHistory.length) return false;
+  var snap = rp._goHistory.pop();
+  rp.manPits = snap.manPits;
+  rp.pendingPit = snap.pendingPit;
+  rp.actualFuelInCar = snap.actualFuelInCar;
+  rp.actualFuelPerLap = snap.actualFuelPerLap;
+  rp.fuelPerLap = snap.fuelPerLap;
+  rp.currentStint = snap.currentStint;
+  rp.viewStint = snap.viewStint;
+  return true;
+}
+
+function rpUndoRaceComplete() {
+  rp.raceCompleted = false;
+  if (!rpRestoreFromPreGoSnapshot()) {
+    // No history (e.g. race loaded fresh after a page reload, so in-memory
+    // undo history is gone) — fall back to clamping currentStint back into
+    // range and clearing viewStint, the best we can do without it.
+    rp.viewStint = null;
+  }
+  rpBuildCalcStints();
+  if (rp.calcStints.length) rp.currentStint = Math.min(rp.currentStint, rp.calcStints.length);
+  renderRacePage();
+  syncPipCard();
+}
+
 function rpBuildCalcStints() {
   var fl = rp.fuelPerLap, tnk = rp.tankCapacity, mrg = rp.margin;
   // Use the live fuel/lap rate (planned until real data comes in, then the
@@ -2537,7 +2589,7 @@ function renderRacePage() {
 
   // Bind undo on completed card
   var undoCompleted = document.getElementById('rpUndoCompleted');
-  if (undoCompleted) undoCompleted.addEventListener('click', function() { rp.raceCompleted = false; rpBuildCalcStints(); renderRacePage(); });
+  if (undoCompleted) undoCompleted.addEventListener('click', rpUndoRaceComplete);
   // Bind undo, set now, nav, tyre, go buttons (these are in racePageWrap so need rebinding)
   var undoBtn = document.getElementById('rpUndo');
   if (undoBtn) undoBtn.addEventListener('click', function(e){ e.stopPropagation(); rpHandleUndo(); });
@@ -2702,6 +2754,23 @@ function rpHandleGo(sn) {
     if (prevStint && (isNaN(pv) || pv < prevStint.st || pv > rp.totalLaps + 1)) return;
   }
 
+  // Push a snapshot of everything this GO press is about to mutate — both
+  // Undo paths (regular stint-back and race-complete) pop and restore from
+  // this stack, one level per GO press, rather than trying to compute which
+  // specific keys to delete after the fact. That guess-based approach broke
+  // whenever stint numbering shifted between GO presses (e.g. an early pit
+  // changing the total stint count), and a single-slot snapshot broke as
+  // soon as Undo was pressed more than once in a row.
+  rp._goHistory.push({
+    manPits: JSON.parse(JSON.stringify(rp.manPits)),
+    pendingPit: JSON.parse(JSON.stringify(rp.pendingPit)),
+    actualFuelInCar: JSON.parse(JSON.stringify(rp.actualFuelInCar)),
+    actualFuelPerLap: JSON.parse(JSON.stringify(rp.actualFuelPerLap)),
+    fuelPerLap: rp.fuelPerLap,
+    currentStint: rp.currentStint,
+    viewStint: rp.viewStint
+  });
+
   // For last stint: use pending pit if set, otherwise fall back to prefilled value
   if (s.isLast) {
     var pitKey0 = sn - 1;
@@ -2797,6 +2866,23 @@ function rpHandleUndo() {
   if (rp.currentStint <= 1) return;
   // Reset timer if undoing back to stint 1
   if (rp.currentStint === 2) rp.raceGoStartMs = null;
+
+  if (rpRestoreFromPreGoSnapshot()) {
+    rpBuildCalcStints();
+    renderRacePage();
+    syncPipCard();
+    if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
+    setTimeout(function(){
+      var el = document.getElementById('rpCard' + rp.currentStint);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+    return;
+  }
+
+  // Fallback for when no snapshot exists (e.g. race loaded fresh after a
+  // page reload, so in-memory history is gone) — reconstruct as best we can
+  // by deleting the specific keys the last GO should have set. Kept only as
+  // a safety net; the snapshot path above is what normally runs.
   var currentS = rp.calcStints.find(function(x){ return x.num === rp.currentStint; });
   var isOnLast = currentS && currentS.isLast;
 
@@ -2836,6 +2922,7 @@ function rpHandleUndo() {
   rp.viewStint = null;
   rpBuildCalcStints();
   renderRacePage();
+  syncPipCard();
   if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
   setTimeout(function(){
     var el = document.getElementById('rpCard' + rp.currentStint);
@@ -2854,6 +2941,7 @@ function rpResetRace() {
   rp.actualFuelInCar = {};
   rp.actualFuelPerLap = {};
   rp.fuelPerLap = fv('iFuel');
+  rp._goHistory = [];
   rpBuildCalcStints();
   renderRacePage();
   if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
@@ -2928,10 +3016,11 @@ function rpSyncFromStrategy(fromKey) {
   rp.actualFuelPerLap = savedActualFuelPerLap;
 
   // Tyre overrides: keep fully driven, refresh rest from strategy
+  var savedTyreOverride = rp.tyreOverride || {};
   rp.tyreOverride = {};
-  Object.keys(rp.tyreOverride).forEach(function(k){
+  Object.keys(savedTyreOverride).forEach(function(k){
     var n = parseInt(k);
-    if (n < drivenBefore) rp.tyreOverride[n] = manOverride[n];
+    if (n < drivenBefore) rp.tyreOverride[n] = savedTyreOverride[n];
   });
   Object.keys(manOverride).forEach(function(k){
     var n = parseInt(k);
@@ -3059,6 +3148,11 @@ function syncDriversFromMembers(){
 // ============================================================
 // UTC CLOCK
 // ============================================================
+// Tracks last-written values for the (static, never-recreated) desktop race
+// countdown strip, so tickClock can skip rewriting label/color/display when
+// they haven't actually changed since the last tick — the countdown value
+// itself still updates every second as required either way.
+var _tcLast={rpLbl:null,rpColor:null,rpDisplay:null};
 function tickClock(){
   var now=new Date();
   var uh=String(now.getUTCHours()).padStart(2,'0'),
@@ -3070,12 +3164,12 @@ function tickClock(){
   var dateEl=g('utcDate');
   if(dateEl)dateEl.textContent=days[now.getUTCDay()]+' '+now.getUTCDate()+' '+months[now.getUTCMonth()]+' '+now.getUTCFullYear();
   var tzEl=g('tzSelect');
-  if(tzEl&&tzEl.offsetParent!==null){
+  var lc=g('localClock'),ll=g('localTzLabel'),ld=g('localDateLabel');
+  if(tzEl&&tzEl.offsetParent!==null&&(lc||ll||ld)){
     var tz=tzEl.value||'UTC';
     try{
       var localTime=now.toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
       var tzShort=tz.split('/').pop().replace(/_/g,' ');
-      var lc=g('localClock'),ll=g('localTzLabel'),ld=g('localDateLabel');
       if(lc)lc.textContent=localTime;
       if(ll)ll.textContent=tzShort;
       if(ld){
@@ -3119,24 +3213,28 @@ function tickClock(){
   if(rpStrip&&rpLbl&&rpVal&&raceTabEl&&raceTabEl.classList.contains('active')){
     var rSec2=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
     if(rSec2){
-      var remaining, color;
+      var remaining, color, lblText;
       if(rp.raceGoStartMs){
         var elapsed=Math.floor((now.getTime()-rp.raceGoStartMs)/1000);
         remaining=Math.max(0, rSec2-elapsed);
         color=remaining<900?'var(--re)':remaining<rSec2*0.1?'var(--ye)':'var(--tg)';
-        rpLbl.textContent='Race ends in'; rpLbl.style.color=color;
+        lblText='Race ends in';
       } else {
         remaining=rSec2;
         color='var(--mu)';
-        rpLbl.textContent='Race duration'; rpLbl.style.color=color;
+        lblText='Race duration';
       }
+      if(_tcLast.rpLbl!==lblText){rpLbl.textContent=lblText;_tcLast.rpLbl=lblText;}
+      if(_tcLast.rpColor!==color){rpLbl.style.color=color;rpVal.style.color=color;_tcLast.rpColor=color;}
       var hh3=Math.floor(remaining/3600),mm3=Math.floor((remaining%3600)/60),ss3=remaining%60;
       rpVal.textContent=String(hh3).padStart(2,'0')+'h '+String(mm3).padStart(2,'0')+'m '+String(ss3).padStart(2,'0')+'s';
-      rpVal.style.color=color;
-      rpStrip.style.display='flex';
-    } else { rpStrip.style.display='none'; }
+      if(_tcLast.rpDisplay!=='flex'){rpStrip.style.display='flex';_tcLast.rpDisplay='flex';}
+    } else if(_tcLast.rpDisplay!=='none'){ rpStrip.style.display='none';_tcLast.rpDisplay='none'; }
   }
-  // Mobile countdown — same logic, different elements
+  // Mobile countdown — same logic, different elements. NOT change-cached like
+  // the desktop strip above: these elements live inside mobRenderRace's full
+  // innerHTML rewrite (fired on every GO/Undo), so a fresh element could
+  // otherwise sit blank/stale until the next value actually changes.
   var mobLbl=g('mobCdLabel'),mobVal=g('mobCdVal');
   if(mobLbl&&mobVal&&raceTabEl&&raceTabEl.classList.contains('active')){
     var rSec3=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
@@ -3214,10 +3312,10 @@ function updateRaceStartDisplay(){
       }catch(e){return '-';}
     };
     g('rsdLocal').textContent=fmt(utcMs,tzVal);
-    g('rsdEnd').textContent=fmt(utcMs+raceSec*1000,tzVal);
+    g('rsdEnd').textContent=fmt(utcMs+30*60*1000+raceSec*1000,tzVal);
     var lu=g('rsdLocalUTC'),eu=g('rsdEndUTC');
     if(lu)lu.textContent=fmt(utcMs,'UTC');
-    if(eu)eu.textContent=fmt(utcMs+raceSec*1000,'UTC');
+    if(eu)eu.textContent=fmt(utcMs+30*60*1000+raceSec*1000,'UTC');
     // Sync UTC inputs
     if(!_updatingUTC){
       _updatingLocal=true;
@@ -3654,7 +3752,7 @@ function renderRoster(raceStartUtcMs){
   var tot=Math.floor(rSec/lSec),maxSL=Math.floor((tnk-mrg)/fl);
   if(tot<1||maxSL<1){wrap.innerHTML='<div class="empty">Check race inputs</div>';return;}
   var stints=buildStints(tot,maxSL,fl,mrg,getStartFuel(tnk));
-  var raceEndMs=raceStartUtcMs+rSec*1000;
+  var raceEndMs=raceStartUtcMs+30*60*1000+rSec*1000;
   var rosterStartMs=raceStartUtcMs;
 
   // Collect roster columns
@@ -3683,7 +3781,7 @@ function renderRoster(raceStartUtcMs){
 
   var now=new Date();
   var nowMs=now.getTime();
-  var showNow=raceStartUtcMs&&raceStartUtcMs>0&&nowMs>raceStartUtcMs&&nowMs<(raceStartUtcMs+rSec*1000);
+  var showNow=raceStartUtcMs&&raceStartUtcMs>0&&nowMs>raceStartUtcMs&&nowMs<(raceStartUtcMs+30*60*1000+rSec*1000);
 
   var html='<div style="display:flex;flex-direction:column;border:1px solid var(--bd);border-radius:6px;background:var(--bg);max-height:520px;overflow:hidden">';
 
@@ -3708,7 +3806,7 @@ function renderRoster(raceStartUtcMs){
   html+='</div>'; // end header row
 
   // ── Scrollable body ────────────────────────────────────────
-  html+='<div id="rosterScrollBody" style="display:flex;flex:1;overflow:auto">';
+  html+='<div id="rosterScrollBody" style="display:flex;flex:1;overflow:auto;contain:layout paint">';
 
   // Sticky time axis
   html+='<div style="flex-shrink:0;position:sticky;left:0;z-index:5;display:flex;background:var(--bg)">';
@@ -3753,7 +3851,7 @@ function renderRoster(raceStartUtcMs){
     html+='<div class="roster-col-body" data-mi="'+mi+'" style="flex:1;min-width:80px;position:relative;height:'+(timeH+timePadTop+timePadBot)+'px;background:'+col+'06;overflow:hidden;'+(isLast?'':'border-right:1px solid rgba(42,47,66,.3)')+';cursor:crosshair;" '+
       'ondragover="event.preventDefault();this.classList.add(\'roster-drop-zone\',\'drag-over-active\')" '+
       'ondragleave="this.classList.remove(\'roster-drop-zone\',\'drag-over-active\')" '+
-      'ondrop="handleRosterDrop(event,'+mi+')" '+
+      'ondrop="handleRosterDrop(event,'+mi+','+raceStartUtcMs+','+rSec+','+totalMins+','+timeH+','+headerH+','+timePadTop+')" '+
       'onclick="handleRosterClick(event,'+mi+','+raceStartUtcMs+','+rSec+','+totalMins+','+timeH+','+headerH+','+timePadTop+')">';
 
     // Grid lines — hour lines subtle, 30-min barely visible
@@ -3770,21 +3868,23 @@ function renderRoster(raceStartUtcMs){
       var showMemberTz=mTz!==tzVal;
       stints.forEach(function(s){
         if((stintDrivers[s.num]||0)!==dIdx)return;
-        var sMs=rosterStartMs+(s.st-1)*lSec*1000+30*60*1000;
-        var eMs=rosterStartMs+s.end*lSec*1000+30*60*1000;
+        var trueSMs=rosterStartMs+30*60*1000+(s.st-1)*lSec*1000;
+        var trueEMs=rosterStartMs+30*60*1000+s.end*lSec*1000;
+        var sMs=trueSMs;
+        var eMs=trueEMs;
         var yTop=((sMs-raceStartUtcMs)/60000/totalMins*timeH+timePadTop);
         var yH=Math.max(10,((eMs-sMs)/60000/totalMins*timeH));
         var raceTzName=tzVal.split('/').pop().replace(/_/g,' ');
         var localS='',localE='',memberS='',memberE='';
         try{
-          localS=new Date(sMs).toLocaleTimeString('en-GB',{timeZone:tzVal,hour:'2-digit',minute:'2-digit',hour12:false});
-          localE=new Date(eMs).toLocaleTimeString('en-GB',{timeZone:tzVal,hour:'2-digit',minute:'2-digit',hour12:false});
+          localS=new Date(trueSMs).toLocaleTimeString('en-GB',{timeZone:tzVal,hour:'2-digit',minute:'2-digit',hour12:false});
+          localE=new Date(trueEMs).toLocaleTimeString('en-GB',{timeZone:tzVal,hour:'2-digit',minute:'2-digit',hour12:false});
           if(showMemberTz){
-            memberS=new Date(sMs).toLocaleTimeString('en-GB',{timeZone:mTz,hour:'2-digit',minute:'2-digit',hour12:false});
-            memberE=new Date(eMs).toLocaleTimeString('en-GB',{timeZone:mTz,hour:'2-digit',minute:'2-digit',hour12:false});
+            memberS=new Date(trueSMs).toLocaleTimeString('en-GB',{timeZone:mTz,hour:'2-digit',minute:'2-digit',hour12:false});
+            memberE=new Date(trueEMs).toLocaleTimeString('en-GB',{timeZone:mTz,hour:'2-digit',minute:'2-digit',hour12:false});
           }
         }catch(e){}
-        var durMs=eMs-sMs;var durH=Math.floor(durMs/3600000),durM=Math.floor((durMs%3600000)/60000);
+        var durMs=trueEMs-trueSMs;var durH=Math.floor(durMs/3600000),durM=Math.floor((durMs%3600000)/60000);
         var durStr=(durH>0?durH+'h ':'')+durM+'m';
         html+='<div class="roster-block" onclick="event.stopPropagation();openStintNoteModal('+s.num+')" style="position:absolute;left:3px;right:3px;top:'+yTop.toFixed(1)+'px;height:'+yH.toFixed(1)+'px;background:'+col+'33;border:1.5px solid '+col+';padding:4px 6px;cursor:pointer">'+
           '<div style="font-size:13px;font-weight:700;color:'+col+';line-height:1.3">S'+s.num+'</div>'+
@@ -3837,7 +3937,7 @@ function renderRoster(raceStartUtcMs){
 
     // Now line
     if(showNow){
-      var nowY=((nowMs-raceStartUtcMs)/(rSec*1000)*timeH+timePadTop).toFixed(1);
+      var nowY=((nowMs-raceStartUtcMs)/60000/totalMins*timeH+timePadTop).toFixed(1);
       html+='<div style="position:absolute;left:0;right:0;top:'+nowY+'px;height:2px;background:var(--re);opacity:.8;z-index:3;pointer-events:none"></div>';
     }
 
@@ -3867,7 +3967,7 @@ function wireManualBlockDrag(wrap,raceStartUtcMs,rSec,totalMins,timeH,headerH,lS
       if(dIdx>=0){
         stints.forEach(function(s){
           if((stintDrivers[s.num]||0)!==dIdx)return;
-          intervals.push({sMs:raceStartUtcMs+(s.st-1)*lSec*1000,eMs:raceStartUtcMs+s.end*lSec*1000});
+          intervals.push({sMs:raceStartUtcMs+30*60*1000+(s.st-1)*lSec*1000,eMs:raceStartUtcMs+30*60*1000+s.end*lSec*1000});
         });
       }
       // Other manual blocks in same column
@@ -3891,7 +3991,7 @@ function wireManualBlockDrag(wrap,raceStartUtcMs,rSec,totalMins,timeH,headerH,lS
       var block=rosterBlocks.find(function(b){return b.id===bid;});
       if(!block)return;
       var dur=block.endMs-block.startMs;
-      var newSMs=Math.max(raceStartUtcMs,Math.min(raceStartUtcMs+rSec*1000-dur,dragState.origStartMs+deltaMs));
+      var newSMs=Math.max(raceStartUtcMs,Math.min(raceStartUtcMs+30*60*1000+rSec*1000-dur,dragState.origStartMs+deltaMs));
       var newEMs=newSMs+dur;
       var clash=hasClash(newSMs,newEMs,bid);
       var newTop=((newSMs-raceStartUtcMs)/60000/totalMins*timeH+timePadTop);
@@ -3984,7 +4084,7 @@ function wireManualBlockDrag(wrap,raceStartUtcMs,rSec,totalMins,timeH,headerH,lS
           if(edge==='top'){
             newSMs=Math.max(raceStartUtcMs,Math.min(resizeState.origEndMs-minDur,resizeState.origStartMs+deltaMs));
           } else {
-            newEMs=Math.min(raceStartUtcMs+rSec*1000,Math.max(resizeState.origStartMs+minDur,resizeState.origEndMs+deltaMs));
+            newEMs=Math.min(raceStartUtcMs+30*60*1000+rSec*1000,Math.max(resizeState.origStartMs+minDur,resizeState.origEndMs+deltaMs));
           }
           var clash=getBlockIntervals(bid).some(function(iv){return newSMs<iv.eMs&&newEMs>iv.sMs;});
           // Update visuals live
@@ -4054,26 +4154,36 @@ function wireManualBlockDrag(wrap,raceStartUtcMs,rSec,totalMins,timeH,headerH,lS
   });
 }
 
-function handleRosterDrop(e,mi){
+function handleRosterDrop(e,mi,raceStartUtcMsArg,rSecArg,totalMinsArg,timeHArg,headerHArg,timePadTopArg){
   e.preventDefault();
   e.currentTarget.classList.remove('roster-drop-zone','drag-over-active');
   if(!memberDragSrc)return;
   var dragMi=memberDragSrc.idx;
   memberDragSrc=null;
-  var rSec=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
-  var raceStartUtcMs=updateRaceStartDisplay();
+  var rSec=rSecArg!==undefined?rSecArg:hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
+  var raceStartUtcMs=raceStartUtcMsArg||updateRaceStartDisplay();
   if(!raceStartUtcMs)return;
+  var totalMins=totalMinsArg!==undefined?totalMinsArg:(rSec/60+30);
   var dropFrac=0.25;
   try{
     var rect=e.currentTarget.getBoundingClientRect();
-    var headerH=36;
-    var bodyH=rect.height-headerH;
-    dropFrac=Math.max(0,Math.min(1,(e.clientY-(rect.top+headerH))/bodyH));
+    var headerH=headerHArg!==undefined?headerHArg:36;
+    var timePadTop=timePadTopArg!==undefined?timePadTopArg:10;
+    // timeH is the actual pixel height representing the mapped time range —
+    // rect.height also includes the header and top/bottom padding, which
+    // are not part of that range and must not be used as the scale.
+    var timeH=timeHArg!==undefined?timeHArg:(rect.height-headerH-timePadTop-20);
+    var rawY=e.clientY-(rect.top+headerH)-timePadTop;
+    dropFrac=Math.max(0,Math.min(1,rawY/timeH));
   }catch(err){}
-  var dropMs=raceStartUtcMs+dropFrac*rSec*1000;
+  // dropFrac spans the full mapped time range, which includes the 30-min
+  // qualifying buffer between event start and the first stint — map it
+  // against that full range, not just the race duration, or a drop near
+  // the top of the grid lands later than where it was actually dropped.
+  var dropMs=raceStartUtcMs+dropFrac*totalMins*60*1000;
   var durMs=Math.min(3600000,rSec*1000*0.15);
   var startMs=Math.max(raceStartUtcMs,dropMs-durMs/2);
-  var endMs=Math.min(raceStartUtcMs+rSec*1000,startMs+durMs);
+  var endMs=Math.min(raceStartUtcMs+30*60*1000+rSec*1000,startMs+durMs);
   rosterBlocks.push({id:rosterBlockId++,memberIdx:dragMi,startMs:startMs,endMs:endMs,note:''});
   renderDriverPage();
 }
@@ -4091,7 +4201,7 @@ function openStintNoteModal(stintNum,col,label){
   pendingStintNum=stintNum;
   pendingBlockMemberIdx=null;pendingBlockColor=null;
   var tzVal=g('tzSelect')?g('tzSelect').value:'UTC';
-  var tzShort=(function(){try{return new Intl.DateTimeFormat('en',{timeZone:tzVal,timeZoneName:'short'}).formatToParts(new Date()).find(function(p){return p.type==='timeZoneName';}).value;}catch(e){return 'Local';}})();
+  var tzShort=tzVal.split('/').pop().replace(/_/g,' ');
   var dIdx=stintDrivers[stintNum]||0;
   var dName=drivers[dIdx]||'';
   var dCol=PAL[dIdx%PAL.length];
@@ -4116,8 +4226,8 @@ function openStintNoteModal(stintNum,col,label){
     html+=row('Driver','<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+dCol+';display:inline-block"></span>'+dName+'</span>');
     if(s){
       if(cachedRaceStartMs&&lSec){
-        var sMs=cachedRaceStartMs+(s.st-1)*lSec*1000;
-        var eMs=cachedRaceStartMs+s.end*lSec*1000;
+        var sMs=cachedRaceStartMs+30*60*1000+(s.st-1)*lSec*1000;
+        var eMs=cachedRaceStartMs+30*60*1000+s.end*lSec*1000;
         var dur=eMs-sMs;var durH=Math.floor(dur/3600000),durM=Math.floor((dur%3600000)/60000);
         var fmtT=function(ms,tz){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:tz||tzVal,hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '--:--';}};
         var raceTzName=tzVal.split('/').pop().replace(/_/g,' ');
@@ -4157,14 +4267,16 @@ function handleRosterClick(e,mi,raceStartUtcMs,rSec,totalMins,timeH,headerH,time
   if(e.target.closest&&e.target.closest('.roster-block'))return;
   if(!raceStartUtcMs||!rSec){showToast('Press Update first to set the race start time');return;}
   var rect=e.currentTarget.getBoundingClientRect();
-  var bodyTop=rect.top+headerH;
-  var rawY=e.clientY-bodyTop-timePadTop;
-  var usableH=rect.height-headerH-timePadTop;
-  var frac=Math.max(0,Math.min(1,rawY/usableH));
-  var clickMs=raceStartUtcMs+frac*rSec*1000;
+  var rawY=e.clientY-(rect.top+headerH)-timePadTop;
+  var frac=Math.max(0,Math.min(1,rawY/timeH));
+  // frac spans the full mapped time range, which includes the 30-min
+  // qualifying buffer between event start and the first stint — map
+  // against that full range, not just the race duration (same fix as
+  // handleRosterDrop).
+  var clickMs=raceStartUtcMs+frac*totalMins*60*1000;
   var durMs=3600000;
   var startMs=Math.max(raceStartUtcMs,clickMs-durMs/2);
-  var endMs=Math.min(raceStartUtcMs+rSec*1000,startMs+durMs);
+  var endMs=Math.min(raceStartUtcMs+30*60*1000+rSec*1000,startMs+durMs);
   openBlockModal(null,mi,startMs,endMs);
 }
 window.handleRosterClick=handleRosterClick;
@@ -4195,7 +4307,7 @@ function openBlockModal(bid,newMi,newStartMs,newEndMs){
   pendingBlockMemberIdx=isNew?newMi:block.memberIdx;
   pendingBlockColor=isNew?autoColor(newMi):(block.color||autoColor(block.memberIdx));
   var tzVal=g('tzSelect')?g('tzSelect').value:'UTC';
-  var tzShort=(function(){try{return new Intl.DateTimeFormat('en',{timeZone:tzVal,timeZoneName:'short'}).formatToParts(new Date()).find(function(p){return p.type==='timeZoneName';}).value;}catch(e){return 'Local';}})();
+  var tzShort=tzVal.split('/').pop().replace(/_/g,' ');
   var mName=members[pendingBlockMemberIdx]?members[pendingBlockMemberIdx].name:'';
   g('blockModalTitle').textContent=(isNew?'Add slot':'Edit slot')+' — '+mName;
   g('bmNoteLabel').textContent='Event';
@@ -4205,13 +4317,21 @@ function openBlockModal(bid,newMi,newStartMs,newEndMs){
   // Show details for existing blocks
   var detWrap=g('bmDetails'),det=g('bmDetailsContent');
   if(!isNew&&block&&detWrap&&det){
-    var fmtT=function(ms){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:tzVal,hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '--:--';}};
+    var fmtT=function(ms,tz){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '--:--';}};
     var dur=block.endMs-block.startMs;
     var durH=Math.floor(dur/3600000),durM=Math.floor((dur%3600000)/60000);
     var row=function(lbl,val,color){return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><span style="font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0">'+lbl+'</span><span style="font-size:12px;font-weight:600;color:'+(color||'var(--tx)')+';text-align:right">'+val+'</span></div>';};
+    // Same combined-range format the stint blocks use: local/race timezone
+    // always shown, the member's own timezone as a second line only when it
+    // actually differs — "11:47–12:34 Melbourne" / "10:47–11:34 Tokyo".
+    var blockMember=members[block.memberIdx];
+    var mTzBlock=(blockMember&&blockMember.timezone)||tzVal;
+    var mTzNameBlock=mTzBlock.split('/').pop().replace(/_/g,' ');
+    var showMemberTzBlock=mTzBlock!==tzVal;
+    var timeRow=function(lbl,s,e,tz,tzName){return row(lbl,fmtT(s,tz)+'–'+fmtT(e,tz)+' <span style="color:var(--mu);font-size:10px">'+tzName+'</span>');};
     det.innerHTML=
-      row('Start',fmtT(block.startMs)+' <span style="color:var(--mu);font-size:10px">'+tzShort+'</span>')+
-      row('End',fmtT(block.endMs)+' <span style="color:var(--mu);font-size:10px">'+tzShort+'</span>')+
+      timeRow('Local',block.startMs,block.endMs,tzVal,tzShort)+
+      (showMemberTzBlock?timeRow(blockMember&&blockMember.name?blockMember.name:'Member',block.startMs,block.endMs,mTzBlock,mTzNameBlock):'')+
       row('Duration',(durH>0?durH+'h ':'')+durM+'m');
     detWrap.style.display='block';
   } else if(detWrap){
@@ -4362,7 +4482,7 @@ function showToast(msg){
 
 function getEmailContext(){
   var tzVal=g('tzSelect')?g('tzSelect').value:'UTC';
-  var tzShort=(function(){try{return new Intl.DateTimeFormat('en',{timeZone:tzVal,timeZoneName:'short'}).formatToParts(new Date()).find(function(p){return p.type==='timeZoneName';}).value;}catch(e){return tzVal.split('/').pop().replace(/_/g,' ');}})();
+  var tzShort=tzVal.split('/').pop().replace(/_/g,' ');
   var raceStartMs=cachedRaceStartMs;
   var rSec=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
   var lSec=hmsToSec(iv('ltH'),iv('ltM'),iv('ltS'));
@@ -4442,7 +4562,7 @@ function buildMemberEmailBody(mi){
   if(ctx.raceStartMs){
     body+='Date          '+fmtMemberDate(ctx.raceStartMs)+nl;
     if(ctx.rSec){
-      var raceEndMs=ctx.raceStartMs+ctx.rSec*1000;
+      var raceEndMs=ctx.raceStartMs+30*60*1000+ctx.rSec*1000;
       body+='Time          '+fmtRange(ctx.raceStartMs,raceEndMs)+nl;
       var h=Math.floor(ctx.rSec/3600),mm=Math.floor((ctx.rSec%3600)/60);
       body+='Duration      '+h+'h '+(mm>0?String(mm).padStart(2,'0')+'m':'')+nl;
@@ -4462,8 +4582,8 @@ function buildMemberEmailBody(mi){
         if(si>0)body+='  '+thin+nl+nl;
         body+='  STINT '+s.num+nl;
         if(ctx.raceStartMs&&ctx.lSec){
-          var sMs=ctx.raceStartMs+(s.st-1)*ctx.lSec*1000;
-          var eMs=ctx.raceStartMs+s.end*ctx.lSec*1000;
+          var sMs=ctx.raceStartMs+30*60*1000+(s.st-1)*ctx.lSec*1000;
+          var eMs=ctx.raceStartMs+30*60*1000+s.end*ctx.lSec*1000;
           body+='  Time      '+fmtRange(sMs,eMs)+nl;
           totalMs+=(eMs-sMs);
         }
@@ -4580,8 +4700,8 @@ function sendStintEmail(stintNum){
   };
   var track=ctx.track||'Race';
   var dateStr=ctx.raceStartMs?ctx.fmtShortDate(ctx.raceStartMs):'';
-  var sMs=ctx.raceStartMs+(s.st-1)*ctx.lSec*1000;
-  var eMs=ctx.raceStartMs+s.end*ctx.lSec*1000;
+  var sMs=ctx.raceStartMs+30*60*1000+(s.st-1)*ctx.lSec*1000;
+  var eMs=ctx.raceStartMs+30*60*1000+s.end*ctx.lSec*1000;
   var subject='[Stint Alert] S'+s.num+(track?' — '+track:'')+(dateStr?' · '+dateStr:'');
   var nl='\n';
   var body='STINT '+s.num+'  —  '+dName+nl;
@@ -5044,10 +5164,11 @@ async function initCloudSync() {
     // whichever copy (local vs cloud) is currently newer.
     if (!existing) {
       var snap = row.data && row.data.snap;
-      var meta = { id: row.id, name: (row.data && row.data.name) || 'Race', track: '', date: '', duration: '' };
+      var meta = { id: row.id, name: (row.data && row.data.name) || 'Race', track: '', date: '', duration: '', car: '' };
       if (snap && snap.inputs) {
         meta.track = snap.inputs.trackName || '';
         meta.date = snap.inputs.raceDate || '';
+        meta.car = snap.inputs.raceCar === '__custom__' ? (snap.inputs.raceCarCustom || '') : (snap.inputs.raceCar || '');
       }
       idx2.push(meta);
       saveRaceIndex(idx2);
@@ -5088,9 +5209,23 @@ function deleteRaceData(id) {
   syncDeleteRace(id);
 }
 
+// Race car selection — toggles the custom text input, and resolves the
+// final display name whichever way it was set (dropdown pick or custom text)
+function onRaceCarChange() {
+  var sel = g('raceCar'), custom = g('raceCarCustom');
+  if (!sel || !custom) return;
+  custom.style.display = sel.value === '__custom__' ? 'block' : 'none';
+}
+function getRaceCarDisplay() {
+  var sel = g('raceCar'), custom = g('raceCarCustom');
+  if (!sel) return '';
+  if (sel.value === '__custom__') return custom ? custom.value.trim() : '';
+  return sel.value || '';
+}
+
 // Collect all current state into a plain object
 function snapshotState() {
-  var inputIds = ['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin','iWarn','iLapsOn','trackName','tzSelect','raceDate','rsH','rsM','raceDateUTC','rsUH','rsUM'];
+  var inputIds = ['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin','iWarn','iLapsOn','trackName','raceCar','raceCarCustom','tzSelect','raceDate','rsH','rsM','raceDateUTC','rsUH','rsUM'];
   var inputs = {};
   inputIds.forEach(function(id) {
     var el = g(id);
@@ -5126,7 +5261,7 @@ function snapshotState() {
 function restoreState(snap) {
   if (!snap) return;
   // Restore inputs
-  var inputIds = ['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin','iWarn','iLapsOn','trackName','tzSelect','raceDate','rsH','rsM','raceDateUTC','rsUH','rsUM'];
+  var inputIds = ['rdH','rdM','rdS','ltH','ltM','ltS','iFuel','iTank','iStartFuel','iMargin','iWarn','iLapsOn','trackName','raceCar','raceCarCustom','tzSelect','raceDate','rsH','rsM','raceDateUTC','rsUH','rsUM'];
   if (snap.inputs) {
     inputIds.forEach(function(id) {
       var el = g(id);
@@ -5138,6 +5273,7 @@ function restoreState(snap) {
     if (sfEl && snap.inputs.iStartFuel === undefined && snap.inputs.iTank !== undefined) {
       sfEl.value = snap.inputs.iTank;
     }
+    onRaceCarChange();
   }
   if (snap.manPits) manPits = snap.manPits;
   if (snap.tyreChange) tyreChange = snap.tyreChange;
@@ -5190,10 +5326,11 @@ function restoreState(snap) {
 
 // Reset all state to defaults for a new race
 function resetState() {
-  var inputDefaults = {rdH:'6',rdM:'0',rdS:'0',ltH:'0',ltM:'1',ltS:'41',iFuel:'3.8',iTank:'110',iStartFuel:'110',iMargin:'1',iWarn:'30',iLapsOn:'15',trackName:'',tzSelect:'',raceDate:'',rsH:'11',rsM:'0',raceDateUTC:'',rsUH:'',rsUM:''};
+  var inputDefaults = {rdH:'6',rdM:'0',rdS:'0',ltH:'0',ltM:'1',ltS:'41',iFuel:'3.8',iTank:'110',iStartFuel:'110',iMargin:'1',iWarn:'30',iLapsOn:'15',trackName:'',raceCar:'',raceCarCustom:'',tzSelect:'',raceDate:'',rsH:'11',rsM:'0',raceDateUTC:'',rsUH:'',rsUM:''};
   Object.keys(inputDefaults).forEach(function(id) {
     var el = g(id); if (el) el.value = inputDefaults[id];
   });
+  onRaceCarChange();
   manPits = {}; tyreChange = {}; manOverride = {}; tyreOn = true; selStint = null;
   drivers = ['Driver 1','Driver 2','Driver 3']; stintDrivers = {}; filterDriver = null;
   members = [
@@ -5207,6 +5344,7 @@ function resetState() {
   rp.currentStint = 1; rp.viewStint = null; rp.syncedAt = null;
   rp.manPits = {}; rp.pendingPit = {}; rp.actualFuelInCar = {};
   rp.tyreOverride = {}; rp.fuelSaveStints = {}; rp.actualFuelPerLap = {}; rp.calcStints = [];
+  rp._goHistory = [];
   rp.calcTyreChange = {}; rp.wearPerLap = 0; rp.fuelPerLap = 0;
   rp.tankCapacity = 0; rp.startFuel = 0; rp.margin = 0; rp.totalLaps = 0;
   _rpGoFlagSVG = null;
@@ -5252,6 +5390,7 @@ function saveAndGoHome() {
     var race = idx.find(function(r) { return r.id === currentRaceId; });
     if (race) {
       race.track = (g('trackName') ? g('trackName').value.trim() : '') || '';
+      race.car = getRaceCarDisplay();
       race.date = (g('raceDate') ? g('raceDate').value : '') || '';
       var rSec = hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
       race.duration = rSec > 0 ? fmtSec(rSec) : '';
@@ -5307,6 +5446,7 @@ function renderHomeScreen() {
       + '<div class="hs-card-name" data-rid="' + race.id + '">' + (race.name || 'Race') + '</div>'
       + '<div class="hs-card-meta">'
       + (race.track ? '<div style="color:var(--tx);font-size:14px;font-weight:700;margin-bottom:6px;line-height:1.3">' + race.track + '</div>' : '')
+      + (race.car ? '<div style="color:var(--ac);font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.3">' + race.car + '</div>' : '')
       + (race.date ? '&#128197; <span>' + race.date + '</span><br>' : '')
       + (race.duration ? '&#9201; <span>' + race.duration + '</span><br>' : '')
       + (driverNames ? driverNames : '')
@@ -6586,13 +6726,7 @@ function syncPipCard() {
 function bindPipCard(host) {
   var undoCompletedBtn = host.querySelector('#rpUndoCompleted');
   if (undoCompletedBtn) {
-    // Completed card has nothing else to bind — same reset the desktop
-    // version's own undo button uses.
-    undoCompletedBtn.addEventListener('click', function () {
-      rp.raceCompleted = false;
-      rpBuildCalcStints();
-      renderRacePage();
-    });
+    undoCompletedBtn.addEventListener('click', rpUndoRaceComplete);
     return;
   }
   var colsEl = host.querySelector('.rp-cols');
@@ -6734,11 +6868,7 @@ function pipBuildMobileCardHTML() {
 function bindPipMobileCard(host) {
   if (rp.raceCompleted) {
     var undoCompletedBtn = host.querySelector('.pip-undo-completed-btn');
-    if (undoCompletedBtn) undoCompletedBtn.addEventListener('click', function () {
-      rp.raceCompleted = false;
-      rpBuildCalcStints();
-      renderRacePage();
-    });
+    if (undoCompletedBtn) undoCompletedBtn.addEventListener('click', rpUndoRaceComplete);
     return;
   }
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
