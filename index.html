@@ -1685,7 +1685,7 @@ function run(){
     var ep=s.isLast||s.isM||s.ep===null?'<span style="color:var(--mu)">'+(s.isLast?'-':'N/A')+'</span>':'<span class="pc">'+s.ep+'</span>';
     var lp=s.isLast||s.isM||s.lp===null?'<span style="color:var(--mu)">'+(s.isLast?'-':'N/A')+'</span>':'<span class="pc">'+s.lp+'</span>';
     var cur=manPits[s.num]!==undefined?manPits[s.num]:'';
-    var mCell=s.isLast?'<span style="color:var(--mu)">-</span>':'<input class="mp'+(cur?' on':'')+'" type="number" data-n="'+s.num+'" data-st="'+s.st+'" data-ae="'+s.ae+'" data-tot="'+(tot+1)+'" placeholder="auto" value="'+cur+'">';
+    var mCell=s.isLast?'<span style="color:var(--mu)">-</span>':'<input class="mp'+(cur?' on':'')+'" type="text" inputmode="numeric" pattern="[0-9]*" data-n="'+s.num+'" data-st="'+s.st+'" data-ae="'+s.ae+'" data-tot="'+(tot+1)+'" placeholder="auto" value="'+cur+'">';
     var fStr='<span style="color:'+(s.fwm>tnk?'var(--re)':'var(--ye)')+'">'+s.fwm.toFixed(1)+' L</span>';
     var dIdx=stintDrivers[s.num]||0;
     var dOpts=drivers.map(function(d,di){return '<option value="'+di+'"'+(di===dIdx?' selected':'')+'>'+d+'</option>';}).join('');
