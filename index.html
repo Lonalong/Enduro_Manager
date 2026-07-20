@@ -1713,6 +1713,14 @@ function run(){
     fBtns+='<button class="fdbtn" data-di="'+di+'" style="padding:4px 10px;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer;border:1px solid '+(a?c:'var(--bd)')+';background:'+(a?c+'22':'transparent')+';color:'+(a?c:'var(--mu)')+';">'+d+'</button>';
   });
 
+  // Preserve focus/cursor position across the rebuild below — a manual pit
+  // lap input lives inside this table, so retyping a value (which now
+  // triggers this same rebuild live) would otherwise lose focus and cursor
+  // position after every keystroke.
+  var _focusedMp = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('mp') ? document.activeElement : null;
+  var _focusedMpN = _focusedMp ? _focusedMp.dataset.n : null;
+  var _focusedMpSel = _focusedMp ? [_focusedMp.selectionStart, _focusedMp.selectionEnd] : null;
+
   tw.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
     +'<span style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em">Filter:</span>'
     +fBtns+'<button class="abtn" id="resetManPitsBtn" style="margin-left:auto">Reset manual pits</button>'
@@ -1774,9 +1782,22 @@ function run(){
         if(isNaN(mvi)||mvi<st||mvi>ptot){this.classList.add('er');this.classList.remove('on');delete manPits[n];}
         else{this.classList.remove('er');this.classList.add('on');manPits[n]=mvi;}
       }
+      // Without this, the stint table (laps, fuel required, everything) only
+      // ever refreshed once the field lost focus — retyping a value without
+      // clicking away left the displayed fuel/laps frozen on the previous
+      // value even though manPits had already changed underneath it.
+      clearTimeout(_runDebounceTimer);
+      _runDebounceTimer=setTimeout(run,150);
       if(currentRaceId){var _snap=snapshotState();scheduleSyncSave(currentRaceId,{_ts:Date.now(),snap:_snap});}
     });
   });
+  if(_focusedMpN!==null){
+    var _restoreMp=tw.querySelector('.mp[data-n="'+_focusedMpN+'"]');
+    if(_restoreMp){
+      _restoreMp.focus();
+      if(_focusedMpSel)try{_restoreMp.setSelectionRange(_focusedMpSel[0],_focusedMpSel[1]);}catch(e){}
+    }
+  }
   gantt(stints,tot,tyre);
   // Expose the just-computed strategy for the pace-cost module (read-only use —
   // nothing outside this module mutates these).
@@ -2532,7 +2553,7 @@ function renderRacePage() {
       // Col 1: pit window + stint laps
       + '<div class="rp-col rp-col-pit">'
       + '<div style="display:flex;flex-direction:column;justify-content:flex-end;flex:1"><div class="rp-col-lbl">Expected pit lap</div>' + pitWinHTML + '</div>'
-      + '<div style="display:flex;flex-direction:column;justify-content:flex-start;flex:1"><div class="rp-stint-laps">' + s.laps + '</div><div class="rp-stint-laps-lbl">laps this stint</div></div>'
+      + '<div style="display:flex;flex-direction:column;justify-content:flex-start;flex:1"><div class="rp-stint-laps" id="rpStintLaps' + s.num + '">' + s.laps + '</div><div class="rp-stint-laps-lbl">laps this stint</div></div>'
       + '</div>'
       // Col 2: actual pit lap numpad
       + pitCell
@@ -2623,9 +2644,27 @@ function renderRacePage() {
       if (np === 'pit') {
         var pitKey = sn - 1;
         var cur = rp.pendingPit[pitKey] !== undefined ? String(rp.pendingPit[pitKey]) : '';
+        var refreshLiveCards = function() {
+          rp.calcStints.forEach(function(st, stIdx) {
+            var startDonut = document.getElementById('rpDonutStart' + st.num);
+            var endDonut = document.getElementById('rpDonutEnd' + st.num);
+            var startTread = rpTreadAtStart(stIdx);
+            var endTread = rpTreadAtEnd(stIdx);
+            if (startDonut && startTread !== null) startDonut.outerHTML = '<span id="rpDonutStart' + st.num + '">' + rpDonutSVG(startTread, 80) + '</span>';
+            if (endDonut && endTread !== null) endDonut.outerHTML = '<span id="rpDonutEnd' + st.num + '">' + rpDonutSVG(endTread, 80) + '</span>';
+            var lapsEl = document.getElementById('rpStintLaps' + st.num);
+            if (lapsEl) lapsEl.textContent = st.laps;
+            var estEl2 = document.getElementById('rpEstLaps' + st.num);
+            if (estEl2) {
+              var estLaps2 = rp.fuelPerLap > 0 ? Math.floor(st.fwm / rp.fuelPerLap) : st.laps;
+              estEl2.innerHTML = 'Est. <span class="rp-est-laps-n">' + estLaps2 + '</span> laps';
+            }
+          });
+        };
         if (k === 'del') {
           delete rp.pendingPit[pitKey];
           rpBuildCalcStints(); // rebuild so prefill reflects correct prevS.end
+          refreshLiveCards(); // and reset donuts/laps/est. laps back to default
         } else if (cur.length < 3) {
           rp.pendingPit[pitKey] = cur + k;
         }
@@ -2650,19 +2689,15 @@ function renderRacePage() {
             dispBox.style.color = '';
           }
         }
-        // Temporarily apply pendingPit to rebuild stints and update donuts live
+        // Temporarily apply pendingPit to rebuild stints and update donuts,
+        // laps, and est. laps live — a pit lap change can shift more than
+        // just this card (it moves the boundary with the previous stint),
+        // so every currently-rendered card gets refreshed, not just this one.
         if (rp.pendingPit[pitKey] !== undefined && !isNaN(parseInt(rp.pendingPit[pitKey])) && parseInt(rp.pendingPit[pitKey]) <= rp.totalLaps + 1) {
           var savedManPit = rp.manPits[pitKey];
           rp.manPits[pitKey] = parseInt(rp.pendingPit[pitKey]);
           rpBuildCalcStints();
-          rp.calcStints.forEach(function(st, stIdx) {
-            var startDonut = document.getElementById('rpDonutStart' + st.num);
-            var endDonut = document.getElementById('rpDonutEnd' + st.num);
-            var startTread = rpTreadAtStart(stIdx);
-            var endTread = rpTreadAtEnd(stIdx);
-            if (startDonut && startTread !== null) startDonut.outerHTML = '<span id="rpDonutStart' + st.num + '">' + rpDonutSVG(startTread, 80) + '</span>';
-            if (endDonut && endTread !== null) endDonut.outerHTML = '<span id="rpDonutEnd' + st.num + '">' + rpDonutSVG(endTread, 80) + '</span>';
-          });
+          refreshLiveCards();
           // Restore — don't lock until GO
           if (savedManPit !== undefined) rp.manPits[pitKey] = savedManPit;
           else delete rp.manPits[pitKey];
@@ -6589,6 +6624,18 @@ function bindPipCard(host) {
         var cur = rp.pendingPit[pitKey] !== undefined ? String(rp.pendingPit[pitKey]) : '';
         if (k === 'del') { delete rp.pendingPit[pitKey]; }
         else if (cur.length < 3) { rp.pendingPit[pitKey] = cur + k; }
+        // Temporarily apply the pending value so the re-render below reflects
+        // it live (laps, est. laps, donuts) — same as the main window — then
+        // revert immediately after, since it isn't locked in until GO.
+        if (rp.pendingPit[pitKey] !== undefined && !isNaN(parseInt(rp.pendingPit[pitKey])) && parseInt(rp.pendingPit[pitKey]) <= rp.totalLaps + 1) {
+          var savedManPitPip = rp.manPits[pitKey];
+          rp.manPits[pitKey] = parseInt(rp.pendingPit[pitKey]);
+          rpBuildCalcStints();
+          renderRacePage();
+          if (savedManPitPip !== undefined) rp.manPits[pitKey] = savedManPitPip;
+          else delete rp.manPits[pitKey];
+          return;
+        }
       } else {
         var cur2 = rp.actualFuelInCar[sn] !== undefined ? String(rp.actualFuelInCar[sn]) : '';
         if (k === 'del') { rp.actualFuelInCar[sn] = undefined; }
@@ -6737,6 +6784,18 @@ function bindPipMobileCard(host) {
         var cur = rp.pendingPit[prevNum] !== undefined ? String(rp.pendingPit[prevNum]) : '';
         if (k === 'del') { delete rp.pendingPit[prevNum]; }
         else if (cur.length < 3) { rp.pendingPit[prevNum] = cur + k; }
+        // Temporarily apply the pending value so the re-render below reflects
+        // it live (laps, est. laps, donuts) — same as the main window — then
+        // revert immediately after, since it isn't locked in until GO.
+        if (rp.pendingPit[prevNum] !== undefined && !isNaN(parseInt(rp.pendingPit[prevNum])) && parseInt(rp.pendingPit[prevNum]) <= rp.totalLaps + 1) {
+          var savedManPitMob = rp.manPits[prevNum];
+          rp.manPits[prevNum] = parseInt(rp.pendingPit[prevNum]);
+          rpBuildCalcStints();
+          renderRacePage();
+          if (savedManPitMob !== undefined) rp.manPits[prevNum] = savedManPitMob;
+          else delete rp.manPits[prevNum];
+          return;
+        }
       } else {
         var curF = rp.actualFuelInCar[sn] !== undefined ? String(rp.actualFuelInCar[sn]) : '';
         if (k === 'del') { delete rp.actualFuelInCar[sn]; }
