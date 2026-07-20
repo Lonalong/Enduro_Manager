@@ -43,7 +43,12 @@ tbody tr.sr:hover td{background:var(--s2)}
 tbody tr.sr.sel td{background:#1a2040}
 tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .pc{color:var(--ye)}
-.mp{width:58px;background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--ye);font-family:inherit;font-size:12px;padding:4px 6px;text-align:center;outline:none}
+.mp{width:58px;background:var(--bg);border:1px solid var(--bd);border-radius:4px 0 0 4px;color:var(--ye);font-family:inherit;font-size:12px;padding:4px 6px;text-align:center;outline:none;border-right:none}
+.mp-wrap{display:inline-flex;align-items:stretch}
+.mp-steps{display:flex;flex-direction:column;border:1px solid var(--bd);border-left:none;border-radius:0 4px 4px 0;overflow:hidden}
+.mp-step{width:14px;flex:1;padding:0;border:none;border-bottom:1px solid var(--bd);background:var(--bg);color:var(--mu);font-size:6px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mp-step:last-child{border-bottom:none}
+.mp-step:hover{background:var(--s2);color:var(--ye)}
 .mp.on{border-color:var(--ye);background:#1c1a0e}
 .mp.er{border-color:var(--re);color:var(--re)}
 .dsel{background:var(--bg);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-family:inherit;font-size:12px;padding:4px 6px;outline:none;cursor:pointer}
@@ -1685,7 +1690,7 @@ function run(){
     var ep=s.isLast||s.isM||s.ep===null?'<span style="color:var(--mu)">'+(s.isLast?'-':'N/A')+'</span>':'<span class="pc">'+s.ep+'</span>';
     var lp=s.isLast||s.isM||s.lp===null?'<span style="color:var(--mu)">'+(s.isLast?'-':'N/A')+'</span>':'<span class="pc">'+s.lp+'</span>';
     var cur=manPits[s.num]!==undefined?manPits[s.num]:'';
-    var mCell=s.isLast?'<span style="color:var(--mu)">-</span>':'<input class="mp'+(cur?' on':'')+'" type="text" inputmode="numeric" pattern="[0-9]*" data-n="'+s.num+'" data-st="'+s.st+'" data-ae="'+s.ae+'" data-tot="'+(tot+1)+'" placeholder="auto" value="'+cur+'">';
+    var mCell=s.isLast?'<span style="color:var(--mu)">-</span>':'<div class="mp-wrap"><input class="mp'+(cur?' on':'')+'" type="text" inputmode="numeric" pattern="[0-9]*" data-n="'+s.num+'" data-st="'+s.st+'" data-ae="'+s.ae+'" data-tot="'+(tot+1)+'" placeholder="auto" value="'+cur+'"><div class="mp-steps"><button type="button" class="mp-step mp-step-up" data-n="'+s.num+'" data-dir="1" tabindex="-1">&#9650;</button><button type="button" class="mp-step mp-step-dn" data-n="'+s.num+'" data-dir="-1" tabindex="-1">&#9660;</button></div></div>';
     var fStr='<span style="color:'+(s.fwm>tnk?'var(--re)':'var(--ye)')+'">'+s.fwm.toFixed(1)+' L</span>';
     var dIdx=stintDrivers[s.num]||0;
     var dOpts=drivers.map(function(d,di){return '<option value="'+di+'"'+(di===dIdx?' selected':'')+'>'+d+'</option>';}).join('');
@@ -1763,6 +1768,27 @@ function run(){
       var n=parseInt(this.dataset.n);
       if(manOverride[n]!==undefined){delete manOverride[n];}else{manOverride[n]=!tyreChange[n];}
       run();
+    });
+  });
+  tw.querySelectorAll('.mp-step').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var n=parseInt(this.dataset.n),dir=parseInt(this.dataset.dir);
+      var inp=tw.querySelector('.mp[data-n="'+n+'"]');
+      if(!inp)return;
+      var st=parseInt(inp.dataset.st),ptot=parseInt(inp.dataset.tot)||99999;
+      var cur=inp.value.trim();
+      // Empty field: up starts at the earliest valid lap, down does nothing
+      // (there's nothing below "empty" to step down to).
+      var next;
+      if(cur===''){ if(dir<0)return; next=st; }
+      else{ var mvi=parseInt(cur); next=(isNaN(mvi)?st:mvi)+dir; }
+      next=Math.max(st,Math.min(ptot,next));
+      inp.value=String(next);
+      inp.focus();
+      // Reuse the exact same validation/live-update path typing triggers —
+      // dispatching a real event rather than duplicating that logic here
+      // keeps both entry methods guaranteed to behave identically.
+      inp.dispatchEvent(new Event('input',{bubbles:true}));
     });
   });
   tw.querySelectorAll('.mp').forEach(function(inp){
