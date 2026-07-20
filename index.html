@@ -5397,12 +5397,20 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
 // ========== FUJI DEFAULT RACE ==========
 (function() {
   var idx = getRaceIndex();
-  // Only seed if no races exist yet
-  if (idx.length > 0) return;
+  // Only seed if no races exist yet — but "no races" from the local index
+  // alone isn't enough to tell: logging out deliberately wipes the local
+  // cache (so one account's races can't leak to the next on a shared
+  // browser), which would otherwise make this look identical to a genuinely
+  // new user every time someone logs back in. A separate flag that logOut()
+  // does NOT clear tracks whether this browser has ever been seeded before,
+  // so seeding only ever happens once per browser, not once per login.
+  var SEED_FLAG_KEY = 'erp_seeded_once';
+  if (idx.length > 0 || localStorage.getItem(SEED_FLAG_KEY) === '1') return;
   // Mobile should never invent its own content — it just mirrors whatever cloud
   // sync brings down from desktop. If desktop has no races, mobile stays empty
   // too (initCloudSync will populate it if/when the cloud actually has data).
   if (isMobile()) return;
+  localStorage.setItem(SEED_FLAG_KEY, '1');
   // Each device/user gets its own unique id for the seed race — a shared
   // hardcoded id (e.g. always "fuji_6h_2025") would mean the first person
   // to ever edit it "claims" that row in Supabase, and every other new
