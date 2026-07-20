@@ -1114,7 +1114,7 @@ var driverMeta=[];
 var rosterBlocks=[];
 var rosterBlockId=0;
 var stintNotes={};
-var cachedRaceStartMs=null; // updated when inputs change, read by tickClock // keyed by stint num
+var cachedRaceStartMs=null; // updated when inputs change // keyed by stint num
 var MEMBER_ROLES=['Driver','Spotter','Engineer','Custom'];
 var ROLE_COLORS={Driver:'',Spotter:'#4f8ef7',Engineer:'#3ecf8e',Rest:'#6b7194',Standby:'#ef9f27',Custom:'#f7d44f'};
 // ==============================================
@@ -3133,67 +3133,6 @@ function syncDriversFromMembers(){
     var dpRD=g('dpRaceDur');if(dpRD)dpRD.textContent=fmtSec(rSec);
   }
 }
-
-// ============================================================
-// UTC CLOCK
-// ============================================================
-function tickClock(){
-  var now=new Date();
-  var uh=String(now.getUTCHours()).padStart(2,'0'),
-      um=String(now.getUTCMinutes()).padStart(2,'0'),
-      us=String(now.getUTCSeconds()).padStart(2,'0');
-  var utcEl=g('utcClock');if(utcEl)utcEl.textContent=uh+':'+um+':'+us;
-  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var dateEl=g('utcDate');
-  if(dateEl)dateEl.textContent=days[now.getUTCDay()]+' '+now.getUTCDate()+' '+months[now.getUTCMonth()]+' '+now.getUTCFullYear();
-  var tzEl=g('tzSelect');
-  var lc=g('localClock'),ll=g('localTzLabel'),ld=g('localDateLabel');
-  if(tzEl&&tzEl.offsetParent!==null&&(lc||ll||ld)){
-    var tz=tzEl.value||'UTC';
-    try{
-      var localTime=now.toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-      var tzShort=tz.split('/').pop().replace(/_/g,' ');
-      if(lc)lc.textContent=localTime;
-      if(ll)ll.textContent=tzShort;
-      if(ld){
-        var parts=new Intl.DateTimeFormat('en-GB',{timeZone:tz,weekday:'short',day:'numeric',month:'short',year:'numeric'}).formatToParts(now);
-        var p={};parts.forEach(function(x){p[x.type]=x.value;});
-        ld.textContent=(p.weekday||'')+' '+(p.day||'')+' '+(p.month||'')+' '+(p.year||'');
-      }
-    }catch(e){}
-  }
-  // Race countdown / countup — uses cached value, no heavy computation
-  var cdWrap=g('raceCountdownWrap'),cdLabel=g('raceCountdownLabel'),cdVal=g('raceCountdown');
-  var stratTabEl=g('tab-strategy');
-  if(cdWrap&&cdLabel&&cdVal&&stratTabEl&&stratTabEl.classList.contains('active')){
-    var rSec=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
-    if(cachedRaceStartMs&&rSec){
-      var raceEndMs2=cachedRaceStartMs+rSec*1000;
-      var nowMs2=now.getTime();
-      var inRace=nowMs2>=cachedRaceStartMs&&nowMs2<raceEndMs2;
-      var pastEnd=nowMs2>=raceEndMs2;
-      var absDiff=inRace?(raceEndMs2-nowMs2):(pastEnd?(nowMs2-raceEndMs2):(cachedRaceStartMs-nowMs2));
-      var totalSecs=Math.floor(absDiff/1000);
-      var dd=Math.floor(totalSecs/86400),hh=Math.floor((totalSecs%86400)/3600),mm=Math.floor((totalSecs%3600)/60),ss=totalSecs%60;
-      var timeStr=(dd>0?dd+'d ':'')+String(hh).padStart(2,'0')+'h '+String(mm).padStart(2,'0')+'m '+String(ss).padStart(2,'0')+'s';
-      if(inRace){
-        var urgentColor=absDiff<900000?'var(--re)':'var(--tg)';
-        cdLabel.textContent='Race ends in';cdLabel.style.color=urgentColor;cdVal.textContent=timeStr;cdVal.style.color=urgentColor;
-      }
-      else if(pastEnd){cdLabel.textContent='Race ended';cdLabel.style.color='var(--mu)';cdVal.textContent=timeStr+' ago';cdVal.style.color='var(--mu)';}
-      else{
-        var urgentColor=absDiff<900000?'var(--re)':'var(--ye)';
-        cdLabel.textContent='Race starts in';cdLabel.style.color=urgentColor;cdVal.textContent=timeStr;cdVal.style.color=urgentColor;
-      }
-      cdWrap.style.display='';
-    } else {
-      cdWrap.style.display='none';
-    }
-  }
-}
-setInterval(tickClock,1000);
-tickClock();
 
 // ============================================================
 // RACE START CALCULATIONS
