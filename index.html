@@ -264,9 +264,6 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .rp-s1-info{display:flex;flex-direction:column;gap:12px;padding:20px 24px}
 .rp-s1-big{font-size:48px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
 /* race page countdown strip */
-.rp-countdown-strip{display:none;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bd);margin-bottom:10px;position:sticky;top:97px;z-index:99;background:var(--bg)}
-.rp-cd-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--mu)}
-.rp-cd-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.04em}
 /* ========== END RACE PAGE CSS ========== */
 
 /* ========== HOME SCREEN ========== */
@@ -293,6 +290,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .hs-badge-planned{background:rgba(79,142,247,.15);color:var(--ac);border:1px solid rgba(79,142,247,.3)}
 .hs-badge-ready{background:rgba(62,207,142,.15);color:var(--tg);border:1px solid rgba(62,207,142,.3)}
 .hs-badge-inprogress{background:rgba(247,212,79,.15);color:var(--ye);border:1px solid rgba(247,212,79,.3)}
+.hs-badge-completed{background:rgba(107,113,148,.15);color:var(--mu);border:1px solid rgba(107,113,148,.3)}
 /* back button in tab nav */
 .tab-back-btn{padding:10px 16px;font-family:inherit;font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--mu);cursor:pointer;margin-bottom:-1px;transition:color .15s}
 .tab-back-btn:hover{color:var(--tx)}
@@ -530,10 +528,6 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
         Continue with Google
       </button>
       <div id="authStatusMsg" style="font-size:12px;color:var(--mu);margin-top:12px;min-height:16px"></div>
-      <button id="authGuestBtn" type="button" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-top:10px;border-radius:8px;border:none;background:transparent;color:var(--mu);font-size:12px;cursor:pointer;text-decoration:underline">
-        Continue without an account
-      </button>
-      <div style="font-size:11px;color:var(--mu);margin-top:6px;line-height:1.5">Races are only saved locally on this device without sign in.</div>
     </div>
   </div>
 </div>
@@ -546,7 +540,6 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div class="hs-sub">Fuel strategy &bull; Tyre wear &bull; Pit windows &bull; Driver allocation</div>
     </div>
     <div style="display:flex;align-items:center;gap:12px">
-      <button id="hsGuestSignInBtn" style="display:none;background:none;border:1px solid var(--bd);border-radius:5px;color:var(--ac);font-family:inherit;font-size:11px;padding:5px 10px;cursor:pointer">Sign in to sync</button>
       <button id="hsLogoutBtn" style="display:none;background:none;border:1px solid var(--bd);border-radius:5px;color:var(--mu);font-family:inherit;font-size:11px;padding:5px 10px;cursor:pointer">Log out</button>
       <div style="display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)">
         <div id="syncStatusDot" style="width:7px;height:7px;border-radius:50%;background:#6b7194;flex-shrink:0;transition:background .3s"></div>
@@ -1000,10 +993,6 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   <div class="rp-sync-bar" id="rpSyncBarStatic">
     <div style="display:flex;flex-direction:column;gap:6px" id="rpFplDisplay">
       <div class="rp-sync-status">Last synced: <span style="color:var(--tx)" id="rpSyncedAt">Not yet synced</span></div>
-    </div>
-    <div id="rpCountdownStrip" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1;padding:0 24px;height:100%;align-self:stretch">
-      <span class="rp-cd-label" id="rpCdLabel" style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-top:28px">—</span>
-      <span class="rp-cd-val" id="rpCdVal" style="font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.04em">—</span>
     </div>
     <div class="rp-strat-select" id="rpStratSelect">
       <span class="rp-strat-lbl">Sync from</span>
@@ -3148,11 +3137,6 @@ function syncDriversFromMembers(){
 // ============================================================
 // UTC CLOCK
 // ============================================================
-// Tracks last-written values for the (static, never-recreated) desktop race
-// countdown strip, so tickClock can skip rewriting label/color/display when
-// they haven't actually changed since the last tick — the countdown value
-// itself still updates every second as required either way.
-var _tcLast={rpLbl:null,rpColor:null,rpDisplay:null};
 function tickClock(){
   var now=new Date();
   var uh=String(now.getUTCHours()).padStart(2,'0'),
@@ -3206,53 +3190,6 @@ function tickClock(){
     } else {
       cdWrap.style.display='none';
     }
-  }
-  // Also update race page countdown if visible
-  var rpStrip=g('rpCountdownStrip'),rpLbl=g('rpCdLabel'),rpVal=g('rpCdVal');
-  var raceTabEl=g('tab-race');
-  if(rpStrip&&rpLbl&&rpVal&&raceTabEl&&raceTabEl.classList.contains('active')){
-    var rSec2=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
-    if(rSec2){
-      var remaining, color, lblText;
-      if(rp.raceGoStartMs){
-        var elapsed=Math.floor((now.getTime()-rp.raceGoStartMs)/1000);
-        remaining=Math.max(0, rSec2-elapsed);
-        color=remaining<900?'var(--re)':remaining<rSec2*0.1?'var(--ye)':'var(--tg)';
-        lblText='Race ends in';
-      } else {
-        remaining=rSec2;
-        color='var(--mu)';
-        lblText='Race duration';
-      }
-      if(_tcLast.rpLbl!==lblText){rpLbl.textContent=lblText;_tcLast.rpLbl=lblText;}
-      if(_tcLast.rpColor!==color){rpLbl.style.color=color;rpVal.style.color=color;_tcLast.rpColor=color;}
-      var hh3=Math.floor(remaining/3600),mm3=Math.floor((remaining%3600)/60),ss3=remaining%60;
-      rpVal.textContent=String(hh3).padStart(2,'0')+'h '+String(mm3).padStart(2,'0')+'m '+String(ss3).padStart(2,'0')+'s';
-      if(_tcLast.rpDisplay!=='flex'){rpStrip.style.display='flex';_tcLast.rpDisplay='flex';}
-    } else if(_tcLast.rpDisplay!=='none'){ rpStrip.style.display='none';_tcLast.rpDisplay='none'; }
-  }
-  // Mobile countdown — same logic, different elements. NOT change-cached like
-  // the desktop strip above: these elements live inside mobRenderRace's full
-  // innerHTML rewrite (fired on every GO/Undo), so a fresh element could
-  // otherwise sit blank/stale until the next value actually changes.
-  var mobLbl=g('mobCdLabel'),mobVal=g('mobCdVal');
-  if(mobLbl&&mobVal&&raceTabEl&&raceTabEl.classList.contains('active')){
-    var rSec3=hmsToSec(iv('rdH'),iv('rdM'),iv('rdS'));
-    if(rSec3){
-      var rem2,col2;
-      if(rp.raceGoStartMs){
-        var el2=Math.floor((now.getTime()-rp.raceGoStartMs)/1000);
-        rem2=Math.max(0,rSec3-el2);
-        col2=rem2<900?'var(--re)':rem2<rSec3*0.1?'var(--ye)':'var(--tg)';
-        mobLbl.textContent='Race ends in'; mobLbl.style.color=col2;
-      } else {
-        rem2=rSec3; col2='var(--mu)';
-        mobLbl.textContent='Race duration'; mobLbl.style.color=col2;
-      }
-      var hh4=Math.floor(rem2/3600),mm4=Math.floor((rem2%3600)/60),ss4=rem2%60;
-      mobVal.textContent=String(hh4).padStart(2,'0')+'h '+String(mm4).padStart(2,'0')+'m '+String(ss4).padStart(2,'0')+'s';
-      mobVal.style.color=col2;
-    } else { mobLbl.textContent='—'; mobVal.textContent='—'; }
   }
 }
 setInterval(tickClock,1000);
@@ -4836,31 +4773,6 @@ function getSB() {
 }
 
 // ========== AUTH ==========
-var GUEST_MODE_KEY = 'erp_guest_mode';
-
-function isGuestMode() {
-  return localStorage.getItem(GUEST_MODE_KEY) === '1';
-}
-
-function enterGuestMode() {
-  localStorage.setItem(GUEST_MODE_KEY, '1');
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('homeScreen').style.display = '';
-  var guestSignInBtn = document.getElementById('hsGuestSignInBtn');
-  if (guestSignInBtn) {
-    guestSignInBtn.style.display = '';
-    guestSignInBtn.onclick = function() {
-      localStorage.removeItem(GUEST_MODE_KEY);
-      showAuthScreen();
-    };
-  }
-  var logoutBtn = document.getElementById('hsLogoutBtn');
-  if (logoutBtn) logoutBtn.style.display = 'none';
-  renderHomeScreen();
-  // No cloud sync in guest mode — races stay local-only to this browser
-  // until the person signs in.
-  setSyncStatus('local');
-}
 
 async function logOut() {
   var sb = getSB();
@@ -4871,7 +4783,6 @@ async function logOut() {
     }
     await sb.auth.signOut();
   }
-  localStorage.removeItem(GUEST_MODE_KEY);
   // Clear every locally cached race so the next account that signs in
   // (in this same browser) can't see this account's cached data before
   // its own Supabase data has loaded. Without this, logging out and
@@ -4899,8 +4810,6 @@ function showAuthScreen() {
 
 function hideAuthScreen() {
   document.getElementById('authScreen').style.display = 'none';
-  var guestSignInBtn = document.getElementById('hsGuestSignInBtn');
-  if (guestSignInBtn) guestSignInBtn.style.display = 'none';
   var logoutBtn = document.getElementById('hsLogoutBtn');
   if (logoutBtn) logoutBtn.style.display = '';
   // Only reveal the home screen if a race isn't already open — Supabase
@@ -4916,25 +4825,20 @@ function hideAuthScreen() {
 async function checkAuthAndInit() {
   var sb = getSB();
   if (!sb) {
-    if (isGuestMode()) { enterGuestMode(); } else { showAuthScreen(); }
+    showAuthScreen();
     return;
   }
   var { data } = await sb.auth.getSession();
   var alreadyInitialized = false;
   if (data && data.session) {
-    // A real sign-in always takes priority over a stale guest-mode flag.
-    localStorage.removeItem(GUEST_MODE_KEY);
     hideAuthScreen();
     initCloudSync();
     alreadyInitialized = true;
-  } else if (isGuestMode()) {
-    enterGuestMode();
   } else {
     showAuthScreen();
   }
   sb.auth.onAuthStateChange(function(event, session) {
     if (session) {
-      localStorage.removeItem(GUEST_MODE_KEY);
       hideAuthScreen();
       // Supabase re-fires this on tab focus to revalidate the session —
       // only run the (heavier) cloud sync bootstrap once per real sign-in.
@@ -4942,7 +4846,7 @@ async function checkAuthAndInit() {
         initCloudSync();
         alreadyInitialized = true;
       }
-    } else if (!isGuestMode()) {
+    } else {
       showAuthScreen();
       alreadyInitialized = false;
     }
@@ -4952,13 +4856,7 @@ async function checkAuthAndInit() {
 document.addEventListener('DOMContentLoaded', function() {
   var msg = document.getElementById('authStatusMsg');
   var googleBtn = document.getElementById('authGoogleBtn');
-  var guestBtn = document.getElementById('authGuestBtn');
   var logoutBtn = document.getElementById('hsLogoutBtn');
-  if (guestBtn) {
-    guestBtn.addEventListener('click', function() {
-      enterGuestMode();
-    });
-  }
   if (logoutBtn) {
     logoutBtn.addEventListener('click', function() {
       if (!confirm('Log out? You can sign back in with the same or a different Google account anytime.')) return;
@@ -5341,7 +5239,7 @@ function resetState() {
   ];
   driverMeta = []; rosterBlocks = []; rosterBlockId = 0; stintNotes = {};
   cachedRaceStartMs = null; actualFuelData = null;
-  rp.currentStint = 1; rp.viewStint = null; rp.syncedAt = null;
+  rp.currentStint = 1; rp.viewStint = null; rp.syncedAt = null; rp.raceCompleted = false;
   rp.manPits = {}; rp.pendingPit = {}; rp.actualFuelInCar = {};
   rp.tyreOverride = {}; rp.fuelSaveStints = {}; rp.actualFuelPerLap = {}; rp.calcStints = [];
   rp._goHistory = [];
@@ -5396,6 +5294,7 @@ function saveAndGoHome() {
       race.duration = rSec > 0 ? fmtSec(rSec) : '';
       race.synced = !!rp.syncedAt;
       race.inProgress = rp.currentStint > 1;
+      race.completed = !!rp.raceCompleted;
       saveRaceIndex(idx);
     }
     saveRaceData(currentRaceId, data);
@@ -5420,7 +5319,9 @@ function renderHomeScreen() {
   var accentColors = ['#4f8ef7','#3ecf8e','#f7934f','#c97bf7','#f75f9a','#5fd8f7','#f7d44f'];
   grid.innerHTML = idx.map(function(race, i) {
     var accent = accentColors[i % accentColors.length];
-    var badge = race.inProgress
+    var badge = race.completed
+      ? '<span class="hs-badge hs-badge-completed">Completed</span>'
+      : race.inProgress
       ? '<span class="hs-badge hs-badge-inprogress">In Progress</span>'
       : race.synced
       ? '<span class="hs-badge hs-badge-ready">Ready</span>'
@@ -5547,7 +5448,7 @@ document.querySelectorAll('.tab-btn').forEach(function(btn) {
       saveRaceData(currentRaceId, data);
       var idx2 = getRaceIndex();
       var race2 = idx2.find(function(r){return r.id===currentRaceId;});
-      if(race2){race2.synced=!!rp.syncedAt;race2.inProgress=rp.currentStint>1;saveRaceIndex(idx2);}
+      if(race2){race2.synced=!!rp.syncedAt;race2.inProgress=rp.currentStint>1;race2.completed=!!rp.raceCompleted;saveRaceIndex(idx2);}
     }
   });
 });
@@ -6380,7 +6281,6 @@ function mobRenderRace(){
   // Sticky sync bar
   html+='<div style="position:sticky;top:33px;z-index:40;background:var(--bg);padding:8px 10px 6px;border-bottom:1px solid var(--bd)">';
   html+='<div style="padding:7px 10px;background:var(--sf);border-radius:8px;border:1px solid var(--bd);display:flex;flex-direction:column;gap:8px">';
-  html+='<div style="display:flex;flex-direction:column;gap:1px"><span id="mobCdLabel" style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--mu)">—</span><span id="mobCdVal" style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--mu)">—</span></div>';
   html+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
     +'<div style="display:flex;border-radius:4px;overflow:hidden;border:1px solid var(--bd)">'
     +['A','B','C'].map(function(k,i){
