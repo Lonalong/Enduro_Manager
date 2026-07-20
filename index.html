@@ -1719,6 +1719,7 @@ function run(){
   // position after every keystroke.
   var _focusedMp = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('mp') ? document.activeElement : null;
   var _focusedMpN = _focusedMp ? _focusedMp.dataset.n : null;
+  var _focusedMpVal = _focusedMp ? _focusedMp.value : null;
   var _focusedMpSel = _focusedMp ? [_focusedMp.selectionStart, _focusedMp.selectionEnd] : null;
 
   tw.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
@@ -1794,6 +1795,21 @@ function run(){
   if(_focusedMpN!==null){
     var _restoreMp=tw.querySelector('.mp[data-n="'+_focusedMpN+'"]');
     if(_restoreMp){
+      if(_focusedMpVal!==null&&_restoreMp.value!==_focusedMpVal){
+        _restoreMp.value=_focusedMpVal;
+        // Re-derive valid/invalid styling for the restored value — the
+        // rebuild regenerates this input fresh from manPits, which may have
+        // been cleared by an intermediate invalid keystroke (e.g. typing
+        // "1" of "15" when valid laps start at 20), so the class needs
+        // recomputing against what's actually still in the field.
+        var _st=parseInt(_restoreMp.dataset.st),_tot=parseInt(_restoreMp.dataset.tot)||99999;
+        if(_focusedMpVal===''){_restoreMp.classList.remove('on','er');}
+        else{
+          var _mvi=parseInt(_focusedMpVal);
+          if(isNaN(_mvi)||_mvi<_st||_mvi>_tot){_restoreMp.classList.add('er');_restoreMp.classList.remove('on');}
+          else{_restoreMp.classList.remove('er');_restoreMp.classList.add('on');}
+        }
+      }
       _restoreMp.focus();
       if(_focusedMpSel)try{_restoreMp.setSelectionRange(_focusedMpSel[0],_focusedMpSel[1]);}catch(e){}
     }
@@ -2650,8 +2666,8 @@ function renderRacePage() {
             var endDonut = document.getElementById('rpDonutEnd' + st.num);
             var startTread = rpTreadAtStart(stIdx);
             var endTread = rpTreadAtEnd(stIdx);
-            if (startDonut && startTread !== null) startDonut.outerHTML = '<span id="rpDonutStart' + st.num + '">' + rpDonutSVG(startTread, 80) + '</span>';
-            if (endDonut && endTread !== null) endDonut.outerHTML = '<span id="rpDonutEnd' + st.num + '">' + rpDonutSVG(endTread, 80) + '</span>';
+            if (startDonut && startTread !== null) startDonut.outerHTML = '<span id="rpDonutStart' + st.num + '">' + rpDonutSVG(startTread, 100) + '</span>';
+            if (endDonut && endTread !== null) endDonut.outerHTML = '<span id="rpDonutEnd' + st.num + '">' + rpDonutSVG(endTread, 100) + '</span>';
             var lapsEl = document.getElementById('rpStintLaps' + st.num);
             if (lapsEl) lapsEl.textContent = st.laps;
             var estEl2 = document.getElementById('rpEstLaps' + st.num);
