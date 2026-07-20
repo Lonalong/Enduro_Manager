@@ -1613,7 +1613,8 @@ function buildStints(tot,maxSL,fl,mrg,sf){
     var effFl=isSave&&saveFl>0?saveFl:fl;
     var stintFl=afl&&afl.drivenStints&&num>afl.drivenStints?afl.fpl:effFl;
     var fuel=r2(laps*stintFl),fwm=r2(fuel+mrg),isLast=isM?(end>=tot):(end>=totB);
-    out.push({num:num,st:st,end:end,ae:ae,laps:laps,fuel:fuel,fwm:fwm,ep:null,lp:null,isLast:isLast,isM:isM,isDriven:afl&&num<=afl.drivenStints,isSave:isSave});
+    var startWeightFuel=(num===1&&sf!==undefined&&sf!==null)?Math.max(sf,fwm):fwm;
+    out.push({num:num,st:st,end:end,ae:ae,laps:laps,fuel:fuel,fwm:fwm,startWeightFuel:startWeightFuel,ep:null,lp:null,isLast:isLast,isM:isM,isDriven:afl&&num<=afl.drivenStints,isSave:isSave});
     if(isM&&end>=tot)break; // real data confirms the race is done here — don't project a phantom stint after it
     lap=end+1;num++;
   }
@@ -5588,7 +5589,8 @@ var PaceCost=(function(){
     var effFuelPerLap=isSave&&saveFuelPerLap>0?saveFuelPerLap:fuelPerLap;
     var totalTyre=0,totalFuelBenefit=0;
     for(var n=1;n<=stint.laps;n++){
-      var fuelInTank=Math.max(0,stint.fwm-(n-1)*effFuelPerLap);
+      var startWeight=stint.startWeightFuel!==undefined?stint.startWeightFuel:stint.fwm;
+      var fuelInTank=Math.max(0,startWeight-(n-1)*effFuelPerLap);
       totalFuelBenefit+=(tankCap-fuelInTank)*c.fuel;
       var treadLostSoFar=Math.min(100,(lscBefore+(n-1))*wearPerLap);
       var treadRemaining=Math.max(0,100-treadLostSoFar);
@@ -5643,7 +5645,8 @@ var PaceCost=(function(){
       }
       var lscBefore=stintBase(stints,i,tyreChangeMap).lsc;
       for(var n=1;n<=stint.laps;n++){
-        var fuelInTank=Math.max(0,stint.fwm-(n-1)*effFuelPerLap);
+        var startWeight2=stint.startWeightFuel!==undefined?stint.startWeightFuel:stint.fwm;
+        var fuelInTank=Math.max(0,startWeight2-(n-1)*effFuelPerLap);
         var fuelBenefit=(tankCap-fuelInTank)*c.fuel;
         var treadLostSoFar=Math.min(100,(lscBefore+(n-1))*wearPerLap);
         var treadRemaining=Math.max(0,100-treadLostSoFar);
