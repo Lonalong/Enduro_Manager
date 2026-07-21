@@ -6911,6 +6911,20 @@ function bindPipMobileCard(host) {
           if (di >= 0 && curF.length - di > 1) return;
           if (curF.length < 5) rp.actualFuelInCar[sn] = curF + k;
         }
+        // Re-apply any pending (unconfirmed) pit lap before rebuilding —
+        // without this, every fuel keystroke rebuilds from the true,
+        // reverted manPits and silently discards whatever pit lap preview
+        // was already confirmed but not yet locked in with GO.
+        var hasPendingPitFuel = rp.pendingPit[prevNum] !== undefined && !isNaN(parseInt(rp.pendingPit[prevNum])) && parseInt(rp.pendingPit[prevNum]) <= rp.totalLaps + 1;
+        if (hasPendingPitFuel) {
+          var savedManPitFuel2 = rp.manPits[prevNum];
+          rp.manPits[prevNum] = parseInt(rp.pendingPit[prevNum]);
+          rpBuildCalcStints();
+          renderRacePage();
+          if (savedManPitFuel2 !== undefined) rp.manPits[prevNum] = savedManPitFuel2;
+          else delete rp.manPits[prevNum];
+          return;
+        }
       }
       rpBuildCalcStints();
       renderRacePage();
