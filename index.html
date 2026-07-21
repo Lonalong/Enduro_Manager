@@ -6381,14 +6381,14 @@ function mobRenderRace(){
 
     html+='<div class="m-rc-grid">';
     html+='<div class="m-rc-cell"><div class="m-rc-lbl">Pit window</div><div class="m-rc-val" style="color:var(--ye)">'+pitWin+'</div><div class="m-rc-sub">'+pitWinSub+'</div></div>';
-    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Laps this stint</div><div class="m-rc-val" style="color:var(--tx)">'+s.laps+'</div><div class="m-rc-sub">→ end L'+s.end+'</div></div>';
-    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Fuel required</div><div class="m-rc-val" style="color:'+(s.fwm>rp.tankCapacity?'var(--re)':'var(--tx)')+'">'+s.fwm.toFixed(1)+'<span style="font-size:15px;color:var(--mu)"> L</span></div></div>';
-    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Add to car</div><div id="madd'+s.num+'" class="m-rc-val" style="color:var(--tg)">'+Math.ceil(addVal)+'<span style="font-size:15px;color:var(--mu)"> L</span></div><div class="m-rc-sub">est. '+estLaps+' laps</div></div>';
+    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Laps this stint</div><div class="m-rc-val" id="mlaps'+s.num+'" style="color:var(--tx)">'+s.laps+'</div><div class="m-rc-sub" id="mlapsend'+s.num+'">→ end L'+s.end+'</div></div>';
+    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Fuel required</div><div class="m-rc-val" id="mfreq'+s.num+'" style="color:'+(s.fwm>rp.tankCapacity?'var(--re)':'var(--tx)')+'">'+s.fwm.toFixed(1)+'<span style="font-size:15px;color:var(--mu)"> L</span></div></div>';
+    html+='<div class="m-rc-cell"><div class="m-rc-lbl">Add to car</div><div id="madd'+s.num+'" class="m-rc-val" style="color:var(--tg)">'+Math.ceil(addVal)+'<span style="font-size:15px;color:var(--mu)"> L</span></div><div class="m-rc-sub">est. <span id="mest'+s.num+'">'+estLaps+'</span> laps</div></div>';
     html+='</div>';
 
     html+='<div class="m-rc-tyre"><div data-tcn="'+prevNum+'" onclick="mobToggleTyre(this)" style="display:flex;align-items:center;gap:6px;cursor:pointer"><div style="width:28px;height:16px;border-radius:8px;background:'+(tcOn?COL_TC:'var(--bd)')+';display:flex;align-items:center;padding:2px;transition:background .2s"><div style="width:12px;height:12px;border-radius:50%;background:var(--bg);'+(tcOn?'margin-left:auto':'margin-left:0')+';flex-shrink:0;transition:margin .2s"></div></div><span style="font-size:12px;font-weight:700;color:'+(tcOn?COL_TC:'var(--mu)')+';">'+(tcOn?'Tyre change':'No change')+'</span></div>';
     if(stT!==null&&enT!==null){
-      html+='<div style="display:flex;gap:10px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px">'+rpDonutSVG(stT,36,4,0.26)+'<span style="font-size:8px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">start</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px">'+rpDonutSVG(enT,36,4,0.26)+'<span style="font-size:8px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">end</span></div></div>';
+      html+='<div style="display:flex;gap:10px"><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span id="mdonutStart'+s.num+'">'+rpDonutSVG(stT,36,4,0.26)+'</span><span style="font-size:8px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">start</span></div><div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span id="mdonutEnd'+s.num+'">'+rpDonutSVG(enT,36,4,0.26)+'</span><span style="font-size:8px;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">end</span></div></div>';
     }
     html+='</div>';
 
@@ -6432,6 +6432,10 @@ function mobRenderRace(){
 function mobSwitchMode(el){
   var sn=parseInt(el.dataset.sn),mode=el.dataset.mode;
   mobNpMode[sn]=mode;
+  var pitKey0=sn-1;
+  var savedManPitSwitch=rp.manPits[pitKey0];
+  var hasPendingPit0=rp.pendingPit[pitKey0]!==undefined&&!isNaN(parseInt(rp.pendingPit[pitKey0]))&&parseInt(rp.pendingPit[pitKey0])<=rp.totalLaps+1;
+  if(hasPendingPit0){rp.manPits[pitKey0]=parseInt(rp.pendingPit[pitKey0]);rpBuildCalcStints();}
   var s=rp.calcStints.find(function(x){return x.num===sn;});
   var si=rp.calcStints.indexOf(s);
   var val=mode==='pit'?rpPrefillPitLap(s,si):rpPrefillFuelInCar(s);
@@ -6442,6 +6446,10 @@ function mobSwitchMode(el){
   el.parentNode.querySelectorAll('.m-np-tab').forEach(function(t){t.className='m-np-tab'+(t.dataset.mode===mode?' '+(mode==='pit'?'pit-on':'fuel-on'):'');});
   var disp=g('mnpd'+sn);
   if(disp){disp.style.borderColor=col;disp.style.color=col;disp.style.opacity=hasUserVal?'1':'0.45';disp.innerHTML=val+' <span style="font-size:13px;color:var(--mu)">'+unit+'</span>';}
+  if(hasPendingPit0){
+    if(savedManPitSwitch!==undefined)rp.manPits[pitKey0]=savedManPitSwitch;
+    else delete rp.manPits[pitKey0];
+  }
   // Show/hide confirm button
   var conf=g('mconf'+sn);
   if(mode==='pit'&&!conf){
@@ -6454,6 +6462,30 @@ function mobNpKey(sn,k){
   var disp=g('mnpd'+sn);if(!disp)return;
   var mode=mobNpMode[sn]||'pit';
   var pitKey=sn-1;
+  var refreshMobLiveCards=function(){
+    rp.calcStints.forEach(function(st,stIdx){
+      var lapsEl=g('mlaps'+st.num);if(lapsEl)lapsEl.textContent=st.laps;
+      var lapsEndEl=g('mlapsend'+st.num);if(lapsEndEl)lapsEndEl.textContent='→ end L'+st.end;
+      var freqEl=g('mfreq'+st.num);
+      if(freqEl){
+        freqEl.innerHTML=st.fwm.toFixed(1)+'<span style="font-size:15px;color:var(--mu)"> L</span>';
+        freqEl.style.color=st.fwm>rp.tankCapacity?'var(--re)':'var(--tx)';
+      }
+      var estEl=g('mest'+st.num);
+      if(estEl){var estLaps=rp.fuelPerLap>0?Math.floor(st.fwm/rp.fuelPerLap):st.laps;estEl.textContent=estLaps;}
+      var addEl=g('madd'+st.num);
+      if(addEl){
+        var fuelInCar=parseFloat(rp.actualFuelInCar[st.num])||parseFloat(rpPrefillFuelInCar(st))||0;
+        addEl.innerHTML=Math.ceil(Math.max(0,st.fwm-fuelInCar))+'<span style="font-size:15px;color:var(--mu)"> L</span>';
+      }
+      var startDonut=g('mdonutStart'+st.num);
+      var endDonut=g('mdonutEnd'+st.num);
+      var startTread=rpTreadAtStart(stIdx);
+      var endTread=rpTreadAtEnd(stIdx);
+      if(startDonut&&startTread!==null)startDonut.innerHTML=rpDonutSVG(startTread,36,4,0.26);
+      if(endDonut&&endTread!==null)endDonut.innerHTML=rpDonutSVG(endTread,36,4,0.26);
+    });
+  };
   if(mode==='pit'){
     var cur=rp.pendingPit[pitKey]!==undefined?String(rp.pendingPit[pitKey]):'';
     if(k==='del'){delete rp.pendingPit[pitKey];cur='';}
@@ -6463,16 +6495,45 @@ function mobNpKey(sn,k){
     var displayVal=rp.pendingPit[pitKey]!==undefined?String(rp.pendingPit[pitKey]):rpPrefillPitLap(s2,si2);
     disp.style.opacity=rp.pendingPit[pitKey]!==undefined?'1':'0.45';
     disp.innerHTML=displayVal+' <span style="font-size:13px;color:var(--mu)">lap</span>';
+    if(k==='del'){
+      rpBuildCalcStints(); // rebuild so prefill/laps/fuel reflect correct default
+      refreshMobLiveCards();
+    } else if(rp.pendingPit[pitKey]!==undefined&&!isNaN(parseInt(rp.pendingPit[pitKey]))&&parseInt(rp.pendingPit[pitKey])<=rp.totalLaps+1){
+      var savedManPitMob2=rp.manPits[pitKey];
+      rp.manPits[pitKey]=parseInt(rp.pendingPit[pitKey]);
+      rpBuildCalcStints();
+      refreshMobLiveCards();
+      // Restore — don't lock until GO
+      if(savedManPitMob2!==undefined)rp.manPits[pitKey]=savedManPitMob2;
+      else delete rp.manPits[pitKey];
+    }
   } else {
     var curF=rp.actualFuelInCar[sn]!==undefined?String(rp.actualFuelInCar[sn]):'';
     if(k==='del'){delete rp.actualFuelInCar[sn];curF='';}
     else if(k==='.'){if(curF.indexOf('.')<0&&curF.length>0){rp.actualFuelInCar[sn]=curF+'.';curF=curF+'.';}}
     else{var di=curF.indexOf('.');if(di>=0&&curF.length-di>1)return;if(curF.length<5){rp.actualFuelInCar[sn]=curF+k;curF=curF+k;}}
+    // Re-apply any pending (unconfirmed) pit lap before reading stint data —
+    // without this, switching to the fuel keypad after previewing a pit lap
+    // would read stale/default stint data instead of the preview the pit
+    // keypad was just showing, making it look like the preview "reverted."
+    var savedManPitFuel=rp.manPits[pitKey];
+    var hasPendingPit=rp.pendingPit[pitKey]!==undefined&&!isNaN(parseInt(rp.pendingPit[pitKey]))&&parseInt(rp.pendingPit[pitKey])<=rp.totalLaps+1;
+    if(hasPendingPit){rp.manPits[pitKey]=parseInt(rp.pendingPit[pitKey]);rpBuildCalcStints();}
     var s3=rp.calcStints.find(function(x){return x.num===sn;});
     var displayFuel=rp.actualFuelInCar[sn]!==undefined?String(rp.actualFuelInCar[sn]):rpPrefillFuelInCar(s3);
     disp.style.opacity=rp.actualFuelInCar[sn]!==undefined?'1':'0.45';
     disp.innerHTML=displayFuel+' <span style="font-size:13px;color:var(--mu)">L</span>';
-    if(s3){var fNum=parseFloat(displayFuel)||0;var addEl=g('madd'+sn);if(addEl)addEl.innerHTML=Math.ceil(Math.max(0,s3.fwm-fNum))+'<span style="font-size:15px;color:var(--mu)"> L</span>';}
+    if(s3){
+      var fNum=parseFloat(displayFuel)||0;
+      var addEl=g('madd'+sn);if(addEl)addEl.innerHTML=Math.ceil(Math.max(0,s3.fwm-fNum))+'<span style="font-size:15px;color:var(--mu)"> L</span>';
+      var estEl2=g('mest'+sn);
+      if(estEl2){var estLaps2=fNum>0?Math.floor(fNum/rp.fuelPerLap):(rp.fuelPerLap>0?Math.floor(s3.fwm/rp.fuelPerLap):s3.laps);estEl2.textContent=estLaps2;}
+    }
+    if(hasPendingPit){
+      refreshMobLiveCards(); // keep every other card showing the same preview it already was
+      if(savedManPitFuel!==undefined)rp.manPits[pitKey]=savedManPitFuel;
+      else delete rp.manPits[pitKey];
+    }
   }
 }
 
