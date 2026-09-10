@@ -269,6 +269,12 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .livery-hero-val{font-family:'Teko','SF Mono',sans-serif;font-weight:600;font-size:42px;line-height:1;color:var(--tg);font-variant-numeric:tabular-nums}
 .livery-hero-val .u{font-family:'Rajdhani','SF Mono',sans-serif;font-size:15px;font-weight:600;color:var(--mu);margin-left:4px}
 .livery-hero-val.tx{color:var(--tx)}
+.livery-undo{margin-left:6px;font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:9px;letter-spacing:.05em;color:var(--mu);background:transparent;border:1px solid var(--bd);border-radius:3px;padding:1px 5px;cursor:pointer;line-height:1.4;flex-shrink:0}
+.livery-undo:hover{color:var(--tx);border-color:var(--mu)}
+.livery-undo:active{transform:scale(.95)}
+.livery-undo-completed{margin-top:14px;font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:11px;letter-spacing:.04em;color:var(--mu);background:transparent;border:1px solid var(--bd);border-radius:5px;padding:5px 12px;cursor:pointer}
+.livery-undo-completed:hover{color:var(--tx);border-color:var(--mu)}
+.livery-final{font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:8px;letter-spacing:.08em;color:var(--ye);background:rgba(247,212,79,.15);padding:1px 5px;border-radius:3px;margin-left:6px}
 .live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tg);margin-right:5px;flex-shrink:0;box-shadow:0 0 0 0 rgba(62,207,142,.6);animation:live-pulse 1.8s ease-out infinite}
 .live-dot.off{background:var(--re);animation:none;box-shadow:none}
 @keyframes live-pulse{0%{box-shadow:0 0 0 0 rgba(62,207,142,.55)}70%{box-shadow:0 0 0 5px rgba(62,207,142,0)}100%{box-shadow:0 0 0 0 rgba(62,207,142,0)}}
@@ -6940,10 +6946,13 @@ function miniHandleHotkey(hotkey) {
   if (!hotkey) return;
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
   if (!s) return;
+  // No isLast guard here on purpose — verified against a simulated race that
+  // the "Final" stint's card still needs live pull + tyre toggle exactly
+  // like a normal one (it's tagged, not blanked; see buildMiniPipHTML).
   if (hotkey === 'pull') {
-    if (s.num !== 1 && !s.isLast) rpFillFromIRacing(s.num);
+    if (s.num !== 1) rpFillFromIRacing(s.num);
   } else if (hotkey === 'tyre') {
-    if (!s.isLast) miniToggleTyre();
+    miniToggleTyre();
   } else if (hotkey === 'go') {
     rpHandleGo(s.num);
   }
@@ -6961,11 +6970,22 @@ function miniToggleTyre() {
   renderRacePage();
 }
 
+// Small "↩" in the header — same rpHandleUndo() as every other Undo button
+// in the app, so a mis-press of G (or C, or a bad S pull) can be reversed
+// right from the Mini card instead of switching to the main Race tab.
+// Hidden on stint 1 since there's nothing before it to undo to.
+function miniUndoHTML() {
+  return rp.currentStint > 1
+    ? '<button class="livery-undo" data-mini-undo="1" title="Undo last GO">&#8617;</button>'
+    : '';
+}
+
 function buildMiniPipHTML() {
   if (rp.raceCompleted) {
     return '<div class="livery-win"><div class="livery-hdr"><span class="livery-title">Pit Wall</span></div>'
       + '<div class="livery-body" style="text-align:center;padding:22px 10px">'
       + '<div class="livery-hero-lbl" style="margin-bottom:8px">Race Complete</div>'
+      + '<button class="livery-undo-completed" data-mini-undo-completed="1">&#8617; Undo</button>'
       + '</div></div>';
   }
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
@@ -6986,19 +7006,15 @@ function buildMiniPipHTML() {
       + '</div></div>';
   }
 
-  // ---- Last stint: nothing left to pit for, so nothing left to pull ----
-  if (s.isLast) {
-    return '<div class="livery-win"><div class="livery-hdr">'
-      + '<span class="livery-title">Pit Wall</span>'
-      + '<span class="livery-live"><span class="live-dot"></span>LIVE</span>'
-      + '</div><div class="livery-body">'
-      + '<div class="livery-hero" style="background:linear-gradient(180deg, rgba(247,212,79,.14), var(--s2));padding:16px 10px">'
-      + '<div class="livery-hero-lbl">No pits remaining</div>'
-      + '<div class="livery-hero-val" style="font-size:32px;color:var(--ye)">Last Stint!</div>'
-      + '</div></div></div>';
-  }
-
-  // ---- Normal / pit-window / offline — same branch logic as pitWinHTML ----
+  // ---- Normal / pit-window / offline / final — same branch logic as
+  // pitWinHTML. NOTE: s.isLast being true does NOT mean "nothing to track" —
+  // simulating the real GO sequence shows currentStint can flip to a final,
+  // isLast stint the instant the PREVIOUS GO is pressed, often many laps
+  // before that stint's own pit actually happens. Desktop/Mobile keep
+  // showing the full card there (just tagged "· Final") because you still
+  // need Expected/Actual/Fuel to actually execute that last pit — so this
+  // does the same: a small FINAL badge, not a blank/replaced card. Only
+  // rp.raceCompleted (checked above) means genuinely nothing left to do.
   var prevS = si > 0 ? rp.calcStints[si - 1] : null;
   var expVal;
   if (!prevS) { expVal = '<span style="color:var(--mu)">&mdash;</span>'; }
@@ -7026,9 +7042,11 @@ function buildMiniPipHTML() {
 
   return '<div class="livery-win"><div class="livery-hdr">'
     + '<span class="livery-title">Pit Wall</span>'
+    + (s.isLast ? '<span class="livery-final">LAST STINT</span>' : '')
     + (connected
       ? '<span class="livery-live"><span class="live-dot"></span>LIVE</span>'
       : '<span class="livery-live off"><span class="live-dot off"></span>NO SIGNAL</span>')
+    + miniUndoHTML()
     + '</div><div class="livery-body">'
     + '<div class="livery-tags">'
     + '<div class="livery-tag expected"><div class="livery-tag-lbl">Expected</div><div class="livery-tag-val">' + expVal + '</div></div>'
@@ -7042,6 +7060,10 @@ function buildMiniPipHTML() {
 function bindMiniPipCard(host) {
   var t = host.querySelector('[data-mini-tyre]');
   if (t) t.addEventListener('click', function (e) { e.stopPropagation(); miniToggleTyre(); });
+  var u = host.querySelector('[data-mini-undo]');
+  if (u) u.addEventListener('click', function (e) { e.stopPropagation(); rpHandleUndo(); });
+  var uc = host.querySelector('[data-mini-undo-completed]');
+  if (uc) uc.addEventListener('click', function (e) { e.stopPropagation(); rpUndoRaceComplete(); });
 }
 // ========== END MINI PIP ==========
 
