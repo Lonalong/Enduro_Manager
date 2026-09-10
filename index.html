@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Enduro Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Used only by the Mini PIP overlay's racing-livery look; everything else
+     in the app stays on the system mono stack, so these are non-critical —
+     if this can't load (offline at the track, etc.) the Mini PIP falls back
+     to 'SF Mono' automatically, just less "condensed dashboard" looking. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Teko:wght@500;600;700&display=swap">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0d0f14;--sf:#151820;--s2:#1c202e;--bd:#2a2f42;--tx:#e8eaf0;--mu:#6b7194;--ac:#4f8ef7;--ye:#f7d44f;--re:#f75f5f;--r:8px;--tg:#3ecf8e;--tw:#ef9f27}
@@ -230,6 +236,43 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .rp-np-display{font-size:clamp(40px,5vw,80px);font-weight:700;font-variant-numeric:tabular-nums;background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:4px;line-height:1;text-align:center;width:100%;flex:0 0 auto}
 .rp-np-display.pit-col{border-color:var(--ac);color:var(--ac)}
 .rp-np-display.fuel-col{border-color:var(--ye);color:var(--ye)}
+.rp-ir-btn,.m-ir-btn{font-family:inherit;cursor:pointer;font-weight:700;letter-spacing:.02em;color:var(--ac);background:rgba(79,142,247,.12);border:1px solid var(--ac);border-radius:4px;white-space:nowrap}
+.rp-ir-btn{font-size:10px;padding:3px 7px}
+.rp-ir-btn:hover,.m-ir-btn:hover{background:rgba(79,142,247,.22)}
+.rp-ir-btn:active,.m-ir-btn:active{transform:scale(.97)}
+.m-ir-btn{font-size:11px;padding:5px 10px}
+
+/* ── Mini PIP overlay: compact racing-livery card (bridge-driven, no buttons except tyre) ── */
+.livery-win{width:250px;background:var(--bg);border:1px solid var(--bd);box-shadow:0 16px 36px -16px rgba(0,0,0,.5);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);font-family:'SF Mono',ui-monospace,monospace}
+.livery-hdr{padding:6px 12px 5px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--bd)}
+.livery-title{font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--tx)}
+.livery-live{margin-left:auto;font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;color:var(--tg);display:flex;align-items:center}
+.livery-live.off{color:var(--re)}
+.livery-body{padding:9px 12px 10px}
+.livery-tags{display:flex;gap:12px;margin-bottom:8px}
+.livery-tag{flex:1;min-width:0}
+.livery-tag-lbl{font-family:'Rajdhani','SF Mono',sans-serif;font-weight:600;font-size:9.5px;color:var(--mu);letter-spacing:.07em;text-transform:uppercase;display:flex;align-items:center;margin-bottom:0}
+.livery-tag-val{font-family:'Teko','SF Mono',sans-serif;font-weight:600;font-size:21px;line-height:1;font-variant-numeric:tabular-nums;color:var(--tx);white-space:nowrap}
+.livery-tag.actual .livery-tag-val{color:var(--ac)}
+.livery-tag.fuel .livery-tag-val{color:var(--ye)}
+.livery-tag.solo{text-align:center}
+.livery-tag.solo .livery-tag-lbl{justify-content:center}
+.livery-tag.stale .livery-tag-val{color:var(--mu)}
+.livery-tyre{display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:8px;font-family:'Rajdhani','SF Mono',sans-serif;font-weight:600;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mu);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.livery-tyre:hover{color:var(--tx)}
+.livery-tyre.on:hover{color:#c97bf7}
+.livery-tyre-dot{width:7px;height:7px;border-radius:50%;background:var(--bd);flex-shrink:0}
+.livery-tyre.on{color:#c97bf7}
+.livery-tyre.on .livery-tyre-dot{background:#c97bf7;box-shadow:0 0 6px rgba(201,123,247,.65)}
+.livery-hero{background:var(--s2);clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);padding:8px 10px 7px;text-align:center}
+.livery-hero-lbl{font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:10px;color:var(--mu);letter-spacing:.11em;text-transform:uppercase;margin-bottom:0}
+.livery-hero-val{font-family:'Teko','SF Mono',sans-serif;font-weight:600;font-size:42px;line-height:1;color:var(--tg);font-variant-numeric:tabular-nums}
+.livery-hero-val .u{font-family:'Rajdhani','SF Mono',sans-serif;font-size:15px;font-weight:600;color:var(--mu);margin-left:4px}
+.livery-hero-val.tx{color:var(--tx)}
+.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tg);margin-right:5px;flex-shrink:0;box-shadow:0 0 0 0 rgba(62,207,142,.6);animation:live-pulse 1.8s ease-out infinite}
+.live-dot.off{background:var(--re);animation:none;box-shadow:none}
+@keyframes live-pulse{0%{box-shadow:0 0 0 0 rgba(62,207,142,.55)}70%{box-shadow:0 0 0 5px rgba(62,207,142,0)}100%{box-shadow:0 0 0 0 rgba(62,207,142,0)}}
+@media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
 .rp-np-unit{font-size:clamp(18px,2vw,32px);color:var(--mu);font-weight:400}
 .rp-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%;flex:1}
 .rp-npb{width:100%;height:100%;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:inherit;font-size:clamp(17px,2vw,32px);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .1s,color .1s}
@@ -1014,6 +1057,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div class="rp-strat-btns" style="margin-left:4px">
         <button class="rp-strat-btn active" id="pipFmtDesktop" data-fmt="desktop">Desktop</button>
         <button class="rp-strat-btn" id="pipFmtMobile" data-fmt="mobile">Mobile</button>
+        <button class="rp-strat-btn" id="pipFmtMini" data-fmt="mini" title="Compact bridge-driven overlay — pit lap, fuel, tyre status, plus S/C/G keyboard hotkeys">Mini</button>
       </div>
       <button class="rp-sbtn" style="border-color:var(--ac);color:var(--ac);background:rgba(79,142,247,.15)" id="rpPopOut">⧉ Pop out overlay</button>
     </div>
@@ -2053,11 +2097,12 @@ document.querySelectorAll('.tab-btn').forEach(function(btn){
 });
 
 document.getElementById('rpPopOut').addEventListener('click', popOutRaceCard);
-document.querySelectorAll('#pipFmtDesktop, #pipFmtMobile').forEach(function (btn) {
+document.querySelectorAll('#pipFmtDesktop, #pipFmtMobile, #pipFmtMini').forEach(function (btn) {
   btn.addEventListener('click', function () {
     pipFormat = this.dataset.fmt;
     document.getElementById('pipFmtDesktop').classList.toggle('active', pipFormat === 'desktop');
     document.getElementById('pipFmtMobile').classList.toggle('active', pipFormat === 'mobile');
+    document.getElementById('pipFmtMini').classList.toggle('active', pipFormat === 'mini');
     if (pipWindow) { pipWindow.close(); pipWindow = null; popOutRaceCard(); }
   });
 });
@@ -2352,6 +2397,61 @@ function rpPrefillFuelInCar(s) {
   return String(Math.floor(rp.margin));
 }
 
+// ── iRacing live telemetry ──────────────────────────────────
+// A small local helper script (run separately, on this same PC, alongside
+// iRacing) reads iRacing's shared-memory SDK and serves the current lap +
+// fuel remaining as JSON on localhost. The "⚡ iRacing" buttons on the Race
+// tab call this to fill in "Actual pit lap" / "Fuel in car" instead of
+// typing them on the numpad. Only works while that script is running.
+var IR_BRIDGE_URL = 'http://127.0.0.1:8765/telemetry';
+var _irFetching = {};
+
+function rpFillFromIRacing(sn) {
+  if (_irFetching[sn]) return;
+  _irFetching[sn] = true;
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timedOut = false;
+  var to = setTimeout(function () { timedOut = true; if (ctrl) ctrl.abort(); }, 2000);
+  fetch(IR_BRIDGE_URL, ctrl ? { signal: ctrl.signal } : {})
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      clearTimeout(to);
+      _irFetching[sn] = false;
+      if (!data || !data.connected || data.lap === null || data.lap === undefined
+          || data.fuelLevel === null || data.fuelLevel === undefined) {
+        showToast('iRacing bridge is running, but no live session was found');
+        return;
+      }
+      var pitKey = sn - 1;
+      var lap = Math.max(0, Math.round(data.lap));
+      var fuel = Math.max(0, data.fuelLevel);
+      rp.actualFuelInCar[sn] = fuel.toFixed(1);
+      if (pitKey >= 1) {
+        rp.pendingPit[pitKey] = String(lap);
+        // Same live-preview trick the numpad uses: briefly lock it in as
+        // manPits so this render shows the resulting laps/donuts/fuel-add
+        // figures, then release it back to "pending" — GO is still what
+        // actually confirms it.
+        var savedManPit = rp.manPits[pitKey];
+        rp.manPits[pitKey] = lap;
+        rpBuildCalcStints();
+        renderRacePage();
+        if (savedManPit !== undefined) rp.manPits[pitKey] = savedManPit; else delete rp.manPits[pitKey];
+      } else {
+        rpBuildCalcStints();
+        renderRacePage();
+      }
+      showToast('Pulled from iRacing — lap ' + lap + ', ' + fuel.toFixed(1) + ' L in car');
+    })
+    .catch(function () {
+      clearTimeout(to);
+      _irFetching[sn] = false;
+      showToast(timedOut
+        ? 'iRacing bridge did not respond — is it running?'
+        : 'Could not reach iRacing bridge — is it running on this PC?');
+    });
+}
+
 // Render the full race page
 function renderRacePage() {
   var wrap = document.getElementById('racePageWrap');
@@ -2543,7 +2643,7 @@ function renderRacePage() {
     var pitCell, fuelCell;
     if (isNow) {
       pitCell = '<div class="rp-col rp-col-numpad" style="display:flex;flex-direction:column">'
-        + '<div class="rp-col-lbl">Actual pit lap</div>'
+        + '<div class="rp-col-lbl" style="display:flex;align-items:center;justify-content:space-between;gap:6px">Actual pit lap<button class="rp-ir-btn" data-ir="' + s.num + '" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ iRacing</button></div>'
         + '<div class="rp-np-display pit-col" id="rpDispPit' + s.num + '"><span id="rpValPit' + s.num + '">' + prefillPit + '</span><span class="rp-np-unit"> lap</span></div>'
         + '<div class="rp-numpad" id="rpNpPit' + s.num + '" style="flex:1">'
         + '<button class="rp-npb" data-np="pit" data-sn="' + s.num + '" data-k="7">7</button>'
@@ -2784,6 +2884,14 @@ function renderRacePage() {
     btn.addEventListener('click', function () {
       var sn = parseInt(this.dataset.go);
       rpHandleGo(sn);
+    });
+  });
+
+  // Bind "pull from iRacing" buttons
+  wrap.querySelectorAll('[data-ir]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      rpFillFromIRacing(parseInt(this.dataset.ir));
     });
   });
 }
@@ -6399,6 +6507,7 @@ function mobRenderRace(){
       var dispVal=curMode==='pit'?prefPit:prefFuel;
       var dispCol=curMode==='pit'?'var(--ac)':'var(--ye)';
       var dispUnit=curMode==='pit'?'lap':'L';
+      html+='<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="m-ir-btn" onclick="rpFillFromIRacing('+s.num+')" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ Pull from iRacing</button></div>';
       html+='<div class="m-np" id="mnp'+s.num+'">';
       html+='<div class="m-np-tabs"><div class="m-np-tab '+(curMode==='pit'?'pit-on':'')+'" data-mode="pit" data-sn="'+s.num+'" onclick="mobSwitchMode(this)">Actual pit lap</div><div class="m-np-tab '+(curMode==='fuel'?'fuel-on':'')+'" data-mode="fuel" data-sn="'+s.num+'" onclick="mobSwitchMode(this)">Fuel in car</div></div>';
       var dispOpacity=curMode==='pit'?(rp.pendingPit[prevNum]!==undefined?'1':(prefPit?'0.45':'1')):(rp.actualFuelInCar[s.num]!==undefined?'1':'0.45');
@@ -6601,7 +6710,7 @@ renderDriverPage=function(){
 
 // ========== PIP OVERLAY (current stint card, popped into its own window) ==========
 var pipWindow = null;
-var pipFormat = 'desktop'; // 'desktop' | 'mobile'
+var pipFormat = 'desktop'; // 'desktop' | 'mobile' | 'mini'
 
 async function popOutRaceCard() {
   if (!('documentPictureInPicture' in window)) {
@@ -6611,7 +6720,9 @@ async function popOutRaceCard() {
   if (pipWindow) { pipWindow.focus(); return; }
   if (!rp.calcStints.length) { alert('Sync from Strategy first, then pop out the overlay.'); return; }
 
-  var dims = pipFormat === 'mobile' ? { width: 360, height: 640 } : { width: 640, height: 420 };
+  var dims = pipFormat === 'mobile' ? { width: 360, height: 640 }
+    : pipFormat === 'mini' ? { width: 280, height: 220 }
+    : { width: 640, height: 420 };
   pipWindow = await documentPictureInPicture.requestWindow(dims);
 
   // Copy all page styles into the PiP document so the card looks identical.
@@ -6666,7 +6777,7 @@ async function popOutRaceCard() {
     pipWindow.document.body.appendChild(host);
   }
 
-  pipWindow.addEventListener('pagehide', function () { pipWindow = null; });
+  pipWindow.addEventListener('pagehide', function () { pipWindow = null; miniStopPolling(); });
 
   if (pipFormat === 'mobile') {
     var applyPipScale = function () {
@@ -6689,6 +6800,7 @@ async function popOutRaceCard() {
   }
 
   syncPipCard();
+  if (pipFormat === 'mini') miniStartPolling(); else miniStopPolling();
 }
 
 function syncPipCard() {
@@ -6701,6 +6813,9 @@ function syncPipCard() {
     host.style.transform = 'none';
     host._naturalH = host.scrollHeight;
     if (pipWindow._applyPipScale) pipWindow._applyPipScale();
+  } else if (pipFormat === 'mini') {
+    host.innerHTML = buildMiniPipHTML();
+    bindMiniPipCard(host);
   } else {
     var src = rp.raceCompleted
       ? document.querySelector('.rp-completed-card')
@@ -6778,6 +6893,158 @@ function bindPipCard(host) {
   if (undoBtn) undoBtn.addEventListener('click', function (e) { e.stopPropagation(); rpHandleUndo(); });
 }
 
+// ========== MINI PIP (compact racing-livery overlay, bridge-driven) ==========
+// Deliberately the simplest of the three overlay formats: no numpad, no GO
+// button, no click targets except the tyre line — everything else comes
+// from iracing_bridge.exe, either via its continuous /telemetry poll below
+// or its S/C/G global hotkeys (which ride along in that same poll's
+// "hotkey" field). Every number still comes from the exact same rp.calcStints
+// / rpPrefillPitLap / rpPrefillFuelInCar / rp.calcTyreChange the Desktop and
+// Mobile overlays use — this just displays less of it.
+var miniBridgeState = { connected: false, hotkey: null };
+var miniPollTimer = null;
+
+function miniStartPolling() {
+  miniStopPolling();
+  miniPollOnce();
+  miniPollTimer = setInterval(miniPollOnce, 1500);
+}
+
+function miniStopPolling() {
+  if (miniPollTimer) { clearInterval(miniPollTimer); miniPollTimer = null; }
+}
+
+function miniPollOnce() {
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var to = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2000);
+  fetch(IR_BRIDGE_URL, ctrl ? { signal: ctrl.signal } : {})
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      clearTimeout(to);
+      miniBridgeState = data || { connected: false, hotkey: null };
+      miniHandleHotkey(miniBridgeState.hotkey);
+      syncPipCard();
+    })
+    .catch(function () {
+      clearTimeout(to);
+      miniBridgeState = { connected: false, hotkey: null };
+      syncPipCard();
+    });
+}
+
+// S/C/G land here the same way a click on the equivalent Race-tab control
+// would — reusing rpFillFromIRacing / rpHandleGo / the tyre-toggle logic
+// directly rather than reimplementing them, so the Mini PIP can never drift
+// from what the main Race tab and other overlays do for the same action.
+function miniHandleHotkey(hotkey) {
+  if (!hotkey) return;
+  var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
+  if (!s) return;
+  if (hotkey === 'pull') {
+    if (s.num !== 1 && !s.isLast) rpFillFromIRacing(s.num);
+  } else if (hotkey === 'tyre') {
+    if (!s.isLast) miniToggleTyre();
+  } else if (hotkey === 'go') {
+    rpHandleGo(s.num);
+  }
+}
+
+// Same override toggle as the '.rp-tc-toggle' / '.pip-tyre-toggle' click
+// handlers elsewhere — prevNum is the stint whose pit-in tyre call this is.
+function miniToggleTyre() {
+  var sn = rp.currentStint;
+  if (sn <= 1) return;
+  var prevNum = sn - 1;
+  var current = rp.calcTyreChange[prevNum];
+  rp.tyreOverride[prevNum] = !current;
+  rpBuildCalcStints();
+  renderRacePage();
+}
+
+function buildMiniPipHTML() {
+  if (rp.raceCompleted) {
+    return '<div class="livery-win"><div class="livery-hdr"><span class="livery-title">Pit Wall</span></div>'
+      + '<div class="livery-body" style="text-align:center;padding:22px 10px">'
+      + '<div class="livery-hero-lbl" style="margin-bottom:8px">Race Complete</div>'
+      + '</div></div>';
+  }
+  var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
+  if (!s) return '';
+  var si = rp.calcStints.indexOf(s);
+
+  // ---- S1: laps to run + fuel on board only, same as the real S1 card ----
+  if (s.num === 1) {
+    return '<div class="livery-win"><div class="livery-hdr">'
+      + '<span class="livery-title">Pit Wall</span>'
+      + '<span class="livery-live" style="color:var(--mu)">STANDBY</span>'
+      + '</div><div class="livery-body">'
+      + '<div class="livery-tags" style="margin-bottom:6px">'
+      + '<div class="livery-tag fuel solo"><div class="livery-tag-lbl">Fuel on board</div><div class="livery-tag-val">' + rp.startFuel.toFixed(1) + 'L</div></div>'
+      + '</div>'
+      + '<div class="livery-tyre"><span class="livery-tyre-dot"></span>No Tyre Change</div>'
+      + '<div class="livery-hero"><div class="livery-hero-lbl">Laps to run</div><div class="livery-hero-val tx">' + s.laps + '<span class="u">laps</span></div></div>'
+      + '</div></div>';
+  }
+
+  // ---- Last stint: nothing left to pit for, so nothing left to pull ----
+  if (s.isLast) {
+    return '<div class="livery-win"><div class="livery-hdr">'
+      + '<span class="livery-title">Pit Wall</span>'
+      + '<span class="livery-live"><span class="live-dot"></span>LIVE</span>'
+      + '</div><div class="livery-body">'
+      + '<div class="livery-hero" style="background:linear-gradient(180deg, rgba(247,212,79,.14), var(--s2));padding:16px 10px">'
+      + '<div class="livery-hero-lbl">No pits remaining</div>'
+      + '<div class="livery-hero-val" style="font-size:32px;color:var(--ye)">Last Stint!</div>'
+      + '</div></div></div>';
+  }
+
+  // ---- Normal / pit-window / offline — same branch logic as pitWinHTML ----
+  var prevS = si > 0 ? rp.calcStints[si - 1] : null;
+  var expVal;
+  if (!prevS) { expVal = '<span style="color:var(--mu)">&mdash;</span>'; }
+  else if (prevS.isM) { expVal = String(prevS.end); }
+  else if (prevS.ep !== null && prevS.lp !== null) { expVal = '<span style="font-size:17px">' + prevS.ep + '&ndash;' + prevS.lp + '</span>'; }
+  else { expVal = String(prevS.end); }
+
+  var prevNum = s.num - 1;
+  var tcOn = rp.calcTyreChange[prevNum] || false;
+  var connected = !!(miniBridgeState && miniBridgeState.connected);
+
+  var actualCell, fuelCell, heroVal;
+  if (connected) {
+    var lap = Math.max(0, Math.round(miniBridgeState.lap));
+    var fuel = Math.max(0, miniBridgeState.fuelLevel);
+    var addVal = Math.max(0, s.fwm - fuel);
+    actualCell = '<div class="livery-tag actual"><div class="livery-tag-lbl"><span class="live-dot"></span>Actual</div><div class="livery-tag-val">' + lap + '</div></div>';
+    fuelCell = '<div class="livery-tag fuel"><div class="livery-tag-lbl"><span class="live-dot"></span>Fuel Left</div><div class="livery-tag-val">' + fuel.toFixed(1) + 'L</div></div>';
+    heroVal = '<div class="livery-hero-val">' + Math.ceil(addVal) + '<span class="u">L</span></div>';
+  } else {
+    actualCell = '<div class="livery-tag actual stale"><div class="livery-tag-lbl"><span class="live-dot off"></span>Actual</div><div class="livery-tag-val">&mdash;</div></div>';
+    fuelCell = '<div class="livery-tag fuel stale"><div class="livery-tag-lbl"><span class="live-dot off"></span>Fuel Left</div><div class="livery-tag-val">&mdash;</div></div>';
+    heroVal = '<div class="livery-hero-val" style="color:var(--mu)">&mdash;</div>';
+  }
+
+  return '<div class="livery-win"><div class="livery-hdr">'
+    + '<span class="livery-title">Pit Wall</span>'
+    + (connected
+      ? '<span class="livery-live"><span class="live-dot"></span>LIVE</span>'
+      : '<span class="livery-live off"><span class="live-dot off"></span>NO SIGNAL</span>')
+    + '</div><div class="livery-body">'
+    + '<div class="livery-tags">'
+    + '<div class="livery-tag expected"><div class="livery-tag-lbl">Expected</div><div class="livery-tag-val">' + expVal + '</div></div>'
+    + actualCell + fuelCell
+    + '</div>'
+    + '<div class="livery-tyre' + (tcOn ? ' on' : '') + '" data-mini-tyre="1"><span class="livery-tyre-dot"></span>' + (tcOn ? 'Tyre Change' : 'No Tyre Change') + '</div>'
+    + '<div class="livery-hero"><div class="livery-hero-lbl">Fuel to add</div>' + heroVal + '</div>'
+    + '</div></div>';
+}
+
+function bindMiniPipCard(host) {
+  var t = host.querySelector('[data-mini-tyre]');
+  if (t) t.addEventListener('click', function (e) { e.stopPropagation(); miniToggleTyre(); });
+}
+// ========== END MINI PIP ==========
+
 // Build the mobile-format card markup for the current stint only (adapted
 // from mobRenderRace, trimmed to a single always-NOW card for the overlay).
 function pipBuildMobileCardHTML() {
@@ -6851,6 +7118,7 @@ function pipBuildMobileCardHTML() {
   var dispUnit = curMode === 'pit' ? 'lap' : 'L';
   var dispOpacity = curMode === 'pit' ? (rp.pendingPit[prevNum] !== undefined ? '1' : (prefPit ? '0.45' : '1')) : (rp.actualFuelInCar[s.num] !== undefined ? '1' : '0.45');
 
+  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="m-ir-btn pip-ir-btn" data-ir="' + s.num + '" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ Pull from iRacing</button></div>';
   html += '<div class="m-np" id="pipMnp">';
   html += '<div class="m-np-tabs"><div class="m-np-tab ' + (curMode === 'pit' ? 'pit-on' : '') + '" data-mode="pit">Actual pit lap</div><div class="m-np-tab ' + (curMode === 'fuel' ? 'fuel-on' : '') + '" data-mode="fuel">Fuel in car</div></div>';
   html += '<div class="m-np-disp" style="border-color:' + dispCol + ';color:' + dispCol + ';opacity:' + dispOpacity + '">' + dispVal + ' <span style="font-size:13px;color:var(--mu)">' + dispUnit + '</span></div>';
@@ -6933,6 +7201,9 @@ function bindPipMobileCard(host) {
 
   var confBtn = host.querySelector('.pip-conf-btn');
   if (confBtn) confBtn.addEventListener('click', function () { mobNpMode[sn] = 'fuel'; syncPipCard(); });
+
+  var irBtn = host.querySelector('.pip-ir-btn');
+  if (irBtn) irBtn.addEventListener('click', function (e) { e.stopPropagation(); rpFillFromIRacing(sn); });
 
   var tyreToggle = host.querySelector('.pip-tyre-toggle');
   if (tyreToggle) tyreToggle.addEventListener('click', function () {
