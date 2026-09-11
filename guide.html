@@ -363,7 +363,8 @@ code{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1
     </div>
 
     <h4>Auto-fill from iRacing</h4>
-    <p>Next to "Actual pit lap" there's a small "&#9889; iRacing" button (labelled "&#9889; Pull from iRacing" on mobile and the pop-out overlay). Tap it right as you cross the line into the pits and it fills both fields for you &mdash; the lap you just completed and the fuel remaining in the car &mdash; straight from iRacing's own telemetry, so there's no typing on the numpad mid-race. The values land the same way a typed entry would: as a pending preview you can still glance at, correct on the keypad, or clear, until GO locks them in.</p>
+    <p>In the header of the active card on the main Race tab &mdash; next to the stint number, driver, and iRating &mdash; there's a small "&#9889; iRacing" button. Tap it right as you cross the line into the pits and it fills both fields for you &mdash; the lap you just completed and the fuel remaining in the car &mdash; straight from iRacing's own telemetry, so there's no typing on the numpad mid-race. The values land the same way a typed entry would: as a pending preview you can still glance at, correct on the keypad, or clear, until GO locks them in.</p>
+    <p>The Desktop and Mobile pop-out overlays don't have this button &mdash; their numpads are typing-only. If you want a hands-off pull without switching back to the main Race tab, use the <a href="#s5-4">Mini overlay</a>'s <b>S</b> hotkey instead, which does the exact same pull and works globally (even while iRacing has focus).</p>
     <div class="callout note">
       <div class="callout-lbl">Note</div>
       <ul>
@@ -385,33 +386,37 @@ code{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:1
     <p>Controls at the top-right pick the format the pop-out overlay uses. Switching format does not change the Race tab's own layout — it only sets what opens when you pop it out.</p>
     <ul>
       <li><b>&#10697; Pop out overlay</b> — opens the current "NOW" card in a small, always-on-top window (Picture-in-Picture), so a spotter or pit-wall crew can keep it visible over other apps. Needs Chrome or Edge and a synced strategy first.</li>
-      <li><b>Desktop</b> (640&times;420) and <b>Mobile</b> (360&times;640) both have their own live keypad, wired to the same race data — entries there update the main window and vice versa.</li>
+      <li><b>Desktop</b> (640&times;420) and <b>Mobile</b> (360&times;640) both have their own live keypad, wired to the same race data — entries there update the main window and vice versa. Typing-only: neither has the "&#9889; iRacing" auto-fill button (see 5.2), so pull from iRacing on the main Race tab, or use the Mini overlay's S hotkey.</li>
       <li><b>Mini</b> (280&times;220) is different on purpose: a compact, racing-styled card with no keypad and no GO button at all — it only shows Expected pit lap, Actual pit lap, Fuel Left, Fuel to add, and tyre-change status, and it only updates from the <b>iRacing Telemetry Bridge</b> (see 5.2's "Auto-fill from iRacing"). Everything it displays comes from the exact same stint math as the other two formats — it's just a smaller window onto it.</li>
     </ul>
 
     <h4>Mini overlay states</h4>
-    <p>The header dot tells you whether what you're looking at is fresh:</p>
+    <p>Actual pit lap and Fuel Left are <b>not</b> a continuously live telemetry feed &mdash; they only update the moment you press <b>S</b>, the same on-demand pull the main Race tab's "&#9889; iRacing" button does. Nothing streams in the background between presses, which keeps the overlay light to leave running for the length of an endurance race. The header dot tells you whether the bridge itself is reachable right now, not whether the numbers are fresh:</p>
     <ul>
-      <li><span style="color:#3ecf8e;font-weight:700">&#9679; LIVE</span> (green, pulsing) — the bridge is connected and the numbers are current.</li>
+      <li><span style="color:#3ecf8e;font-weight:700">&#9679; CONNECTED</span> (green) — the bridge can see iRacing. Doesn't mean you've pulled recently &mdash; just that S would work if you pressed it.</li>
       <li><span style="color:#6b7194;font-weight:700">STANDBY</span> (grey) — stint 1, before any pit; nothing to pull yet, not an error.</li>
-      <li><span style="color:#f75f5f;font-weight:700">&#9679; NO SIGNAL</span> (red, not pulsing) — the bridge can't be reached. Actual pit lap, Fuel Left, and Fuel to add all show a plain "&mdash;" rather than a stale or guessed number; Expected pit lap and tyre status still show normally since those come from the plan, not the bridge.</li>
+      <li><span style="color:#f75f5f;font-weight:700">&#9679; NO SIGNAL</span> (red) — the bridge can't be reached. Actual pit lap, Fuel Left, and Fuel to add all show a plain "&mdash;" rather than a stale or guessed number; Expected pit lap and tyre status still show normally since those come from the plan, not the bridge.</li>
     </ul>
+    <p>Independently of the CONNECTED/NO SIGNAL dot, Actual pit lap and Fuel Left each show their own small dot &mdash; lit once you've pulled a value for the <i>current</i> stint, dim if you haven't pulled yet this stint. Undoing or moving to a new stint clears them back to dim until you press S again there.</p>
     <p>A small gold <b>LAST STINT</b> tag appears next to "Pit Wall" once you're on the race's last stint &mdash; the same trigger Desktop/Mobile use for their "&middot; Final" label. Everything else on the card (Expected, Actual, Fuel Left, Fuel to add, tyre status) keeps working exactly as normal, since that last stint can still be many laps from actually finishing and you still need those numbers for its pit stop, if it has one. Nothing about the Mini card changes to a "nothing left to do" state until the race is genuinely over (see "Race Complete" above) &mdash; there's no in-between blank state.</p>
-    <p>Tyre-change status is click-to-toggle on the Mini card itself, the same override as the toggle on the other two formats and the Strategy tab. A small "&#8617;" appears in the top-right of the card (once past stint 1) for exactly one purpose: undoing a mis-press &mdash; hitting G by mistake, or a bad S pull &mdash; without needing to switch away to the main Race tab. It's the same Undo as everywhere else in the app, so it reverses the most recent GO however it was triggered. Once the race is fully complete, the card shows its own "&#8617; Undo" to reopen the last stint if that GO was also a mis-press.</p>
+    <p>Tyre-change status is click-to-toggle on the Mini card itself, the same override as the toggle on the other two formats and the Strategy tab. A small "&#8617;" appears in the top-right of the card (once past stint 1) for exactly one purpose: undoing a mis-press &mdash; hitting Enter by mistake, or a bad S pull &mdash; without needing to switch away to the main Race tab. It's the same Undo as everywhere else in the app, so it reverses the most recent GO however it was triggered. Once the race is fully complete, the card shows its own "&#8617; Undo" to reopen the last stint if that GO was also a mis-press.</p>
 
-    <h4>S / C / G hotkeys</h4>
-    <p>The Mini overlay is meant to stay up the whole race while you're focused on iRacing, so it doesn't rely on the overlay window having focus. As long as <code>iracing_bridge.exe</code> is running (check its tray icon) and the Mini overlay is open somewhere, three keys work globally &mdash; even with iRacing itself fullscreen and focused:</p>
+    <h4>S / C / Enter / Backspace hotkeys</h4>
+    <p>The Mini overlay is meant to stay up the whole race while you're focused on iRacing, so it doesn't rely on the overlay window having focus. As long as <code>iracing_bridge.exe</code> is running (check its tray icon) and the Mini overlay is open somewhere, four keys work globally &mdash; even with iRacing itself fullscreen and focused:</p>
     <ul>
       <li><b>S</b> &mdash; pull the latest lap + fuel from iRacing (same as the &#9889; iRacing button)</li>
       <li><b>C</b> &mdash; toggle tyre change for the current stint</li>
-      <li><b>G</b> &mdash; confirm / GO</li>
+      <li><b>Enter</b> &mdash; confirm / GO</li>
+      <li><b>Backspace</b> &mdash; undo the most recent GO (same as the card's &#8617; button)</li>
     </ul>
     <div class="callout note">
       <div class="callout-lbl">Note</div>
       <ul>
         <li>These are global hotkeys captured by <code>iracing_bridge.exe</code> itself (a real desktop program, not the browser) &mdash; that's what lets them work while iRacing has focus. A browser tab on its own can't do this.</li>
-        <li>The keys are <b>not</b> blocked from also reaching iRacing. If S, C, or G happen to already be bound to something in iRacing or a button box, that in-game action fires too. If you're not sure they're free, open <code>iracing_bridge.py</code> and change <code>PULL_KEY</code> / <code>TYRE_KEY</code> / <code>GO_KEY</code> near the top to something unused (F13&ndash;F24 and spare numpad keys are common choices for exactly this reason), then rebuild the exe.</li>
+        <li>The keys are <b>not</b> blocked from also reaching iRacing. If S, C, Enter, or Backspace happen to already be bound to something in iRacing or a button box, that in-game action fires too. If you're not sure they're free, open <code>iracing_bridge.py</code> and change <code>PULL_KEY</code> / <code>TYRE_KEY</code> / <code>GO_KEY</code> / <code>UNDO_KEY</code> near the top to something unused (F13&ndash;F24 and spare numpad keys are common choices for exactly this reason), then rebuild the exe.</li>
+        <li>Enter is a common key elsewhere on the PC (chat boxes, dialogs, alt-tabbed windows), so a stray Enter press anywhere while the bridge is running will fire a GO on the current stint. Swap <code>GO_KEY</code> for something less common (like a spare F-key) if that's a problem for you.</li>
         <li>S and C do nothing during stint 1 or the last stint, matching what the Mini card shows (or rather, doesn't show) at those points.</li>
+        <li>The Mini overlay's own pop-out window does <b>not</b> also listen for Enter/Backspace at the browser level like Desktop and Mobile do &mdash; it relies solely on these four bridge hotkeys, so a single keypress can't accidentally fire twice.</li>
       </ul>
     </div>
 

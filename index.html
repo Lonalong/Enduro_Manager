@@ -1063,7 +1063,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div class="rp-strat-btns" style="margin-left:4px">
         <button class="rp-strat-btn active" id="pipFmtDesktop" data-fmt="desktop">Desktop</button>
         <button class="rp-strat-btn" id="pipFmtMobile" data-fmt="mobile">Mobile</button>
-        <button class="rp-strat-btn" id="pipFmtMini" data-fmt="mini" title="Compact bridge-driven overlay — pit lap, fuel, tyre status, plus S/C/G keyboard hotkeys">Mini</button>
+        <button class="rp-strat-btn" id="pipFmtMini" data-fmt="mini" title="Compact bridge-driven overlay — pit lap, fuel, tyre status, plus S/C/Enter/Backspace keyboard hotkeys">Mini</button>
       </div>
       <button class="rp-sbtn" style="border-color:var(--ac);color:var(--ac);background:rgba(79,142,247,.15)" id="rpPopOut">⧉ Pop out overlay</button>
     </div>
@@ -2524,10 +2524,13 @@ function renderRacePage() {
       + (dIrating ? '<span style="font-size:9px;font-weight:700;color:var(--ye);background:rgba(247,212,79,.15);padding:2px 6px;border-radius:3px;margin-left:6px">' + dIrating + '</span>' : '')
       : '';
 
+    var irBtnHtml = isNow ? '<button class="rp-ir-btn" data-ir="' + s.num + '" style="margin-left:10px" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ iRacing</button>' : '';
+
     var hdr = '<div class="rp-card-hdr" data-nav="' + s.num + '" style="cursor:pointer">'
       + pill
       + '<span class="rp-stint-lbl" style="color:' + col + '">Stint ' + s.num + (s.isLast ? ' · Final' : '') + '</span>'
       + driverHtml
+      + irBtnHtml
       + (isActualNow && !isNow ? '<span style="font-size:10px;color:var(--ac);margin-left:auto">← NOW</span>' : '')
       + '<span style="margin-left:auto">' + undoBtnHtml + setNowBtn + '</span>'
       + '</div>';
@@ -2649,7 +2652,7 @@ function renderRacePage() {
     var pitCell, fuelCell;
     if (isNow) {
       pitCell = '<div class="rp-col rp-col-numpad" style="display:flex;flex-direction:column">'
-        + '<div class="rp-col-lbl" style="display:flex;align-items:center;justify-content:space-between;gap:6px">Actual pit lap<button class="rp-ir-btn" data-ir="' + s.num + '" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ iRacing</button></div>'
+        + '<div class="rp-col-lbl">Actual pit lap</div>'
         + '<div class="rp-np-display pit-col" id="rpDispPit' + s.num + '"><span id="rpValPit' + s.num + '">' + prefillPit + '</span><span class="rp-np-unit"> lap</span></div>'
         + '<div class="rp-numpad" id="rpNpPit' + s.num + '" style="flex:1">'
         + '<button class="rp-npb" data-np="pit" data-sn="' + s.num + '" data-k="7">7</button>'
@@ -6521,7 +6524,6 @@ function mobRenderRace(){
       var dispVal=curMode==='pit'?prefPit:prefFuel;
       var dispCol=curMode==='pit'?'var(--ac)':'var(--ye)';
       var dispUnit=curMode==='pit'?'lap':'L';
-      html+='<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="m-ir-btn" onclick="rpFillFromIRacing('+s.num+')" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ Pull from iRacing</button></div>';
       html+='<div class="m-np" id="mnp'+s.num+'">';
       html+='<div class="m-np-tabs"><div class="m-np-tab '+(curMode==='pit'?'pit-on':'')+'" data-mode="pit" data-sn="'+s.num+'" onclick="mobSwitchMode(this)">Actual pit lap</div><div class="m-np-tab '+(curMode==='fuel'?'fuel-on':'')+'" data-mode="fuel" data-sn="'+s.num+'" onclick="mobSwitchMode(this)">Fuel in car</div></div>';
       var dispOpacity=curMode==='pit'?(rp.pendingPit[prevNum]!==undefined?'1':(prefPit?'0.45':'1')):(rp.actualFuelInCar[s.num]!==undefined?'1':'0.45');
@@ -6793,16 +6795,28 @@ async function popOutRaceCard() {
 
   pipWindow.addEventListener('pagehide', function () { pipWindow = null; miniStopPolling(); });
 
-  // Backspace = Undo in the pop-out too — it's a separate window/document
-  // from the main page, so the main document's keydown listener never sees
-  // this one; same guard against text fields, same preventDefault so a
-  // stray Backspace can't navigate this popout back instead.
+  // Enter = GO and Backspace = Undo in the pop-out too — it's a separate
+  // window/document from the main page, so the main document's keydown
+  // listener never sees either of these; same guard against text fields,
+  // same preventDefault on Backspace so it can't navigate this popout back.
+  // Skipped for Mini specifically: G and Backspace are already global
+  // hotkeys via the bridge there, and this window can gain OS focus (e.g.
+  // a stray click) independently of that — without this guard, one
+  // keypress while focused could fire both the instant browser handler and
+  // the bridge's next poll, undoing/going twice for a single press.
   pipWindow.addEventListener('keydown', function (e) {
-    if (e.key !== 'Backspace') return;
+    if (pipFormat === 'mini') return;
     var tag = pipWindow.document.activeElement ? pipWindow.document.activeElement.tagName : '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    e.preventDefault();
-    rpHandleUndo();
+    if (e.key === 'Enter') {
+      var sn = rp.currentStint;
+      var s = rp.calcStints && rp.calcStints.find(function (x) { return x.num === sn; });
+      if (!s) return;
+      rpHandleGo(sn);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      rpHandleUndo();
+    }
   });
 
   if (pipFormat === 'mobile') {
@@ -6922,11 +6936,17 @@ function bindPipCard(host) {
 // ========== MINI PIP (compact racing-livery overlay, bridge-driven) ==========
 // Deliberately the simplest of the three overlay formats: no numpad, no GO
 // button, no click targets except the tyre line — everything else comes
-// from iracing_bridge.exe, either via its continuous /telemetry poll below
-// or its S/C/G global hotkeys (which ride along in that same poll's
-// "hotkey" field). Every number still comes from the exact same rp.calcStints
-// / rpPrefillPitLap / rpPrefillFuelInCar / rp.calcTyreChange the Desktop and
-// Mobile overlays use — this just displays less of it.
+// from iracing_bridge.exe's S/C/Enter/Backspace global hotkeys, reported
+// back via a background poll of /telemetry. That poll is intentionally
+// lightweight, though: it's only there so the hotkeys work even while
+// iRacing has focus (there's no other way for the browser to learn a global
+// OS-level keypress happened). It does NOT stream live telemetry into the
+// card — Actual pit lap / Fuel Left only change the moment you press S,
+// exactly like the ⚡ Pull from iRacing button on Desktop/Mobile, and the
+// card only redraws when a hotkey fires or the CONNECTED badge flips, not on
+// every poll tick. Every number still comes from the exact same
+// rp.calcStints / rpPrefillPitLap / rpPrefillFuelInCar / rp.calcTyreChange
+// the Desktop and Mobile overlays use — this just displays less of it.
 var miniBridgeState = { connected: false, hotkey: null };
 var miniPollTimer = null;
 
@@ -6947,18 +6967,30 @@ function miniPollOnce() {
     .then(function (r) { return r.json(); })
     .then(function (data) {
       clearTimeout(to);
+      var wasConnected = !!(miniBridgeState && miniBridgeState.connected);
       miniBridgeState = data || { connected: false, hotkey: null };
-      miniHandleHotkey(miniBridgeState.hotkey);
-      syncPipCard();
+      var hotkey = miniBridgeState.hotkey;
+      var nowConnected = !!miniBridgeState.connected;
+      if (hotkey) miniHandleHotkey(hotkey);
+      // Only touch the DOM when something actually changed — a hotkey firing,
+      // or the CONNECTED/NO SIGNAL badge flipping — instead of rebuilding the
+      // card on every single poll tick regardless. The card no longer shows
+      // raw, continuously-updating telemetry (see buildMiniPipHTML): Actual /
+      // Fuel Left only change when you actually pull (S), so most ticks have
+      // nothing new to draw. This is the main fix for the long-race memory
+      // growth — a full innerHTML rebuild + listener rebind every 1.5s for
+      // hours added up, even though the fetch itself is tiny.
+      if (hotkey || nowConnected !== wasConnected) syncPipCard();
     })
     .catch(function () {
       clearTimeout(to);
+      var wasConnected = !!(miniBridgeState && miniBridgeState.connected);
       miniBridgeState = { connected: false, hotkey: null };
-      syncPipCard();
+      if (wasConnected) syncPipCard();
     });
 }
 
-// S/C/G land here the same way a click on the equivalent Race-tab control
+// S/C/Enter/Backspace land here the same way a click on the equivalent Race-tab control
 // would — reusing rpFillFromIRacing / rpHandleGo / the tyre-toggle logic
 // directly rather than reimplementing them, so the Mini PIP can never drift
 // from what the main Race tab and other overlays do for the same action.
@@ -6975,6 +7007,8 @@ function miniHandleHotkey(hotkey) {
     miniToggleTyre();
   } else if (hotkey === 'go') {
     rpHandleGo(s.num);
+  } else if (hotkey === 'undo') {
+    rpHandleUndo();
   }
 }
 
@@ -6991,7 +7025,7 @@ function miniToggleTyre() {
 }
 
 // Small "↩" in the header — same rpHandleUndo() as every other Undo button
-// in the app, so a mis-press of G (or C, or a bad S pull) can be reversed
+// in the app, so a mis-press of Enter (or C, or a bad S pull) can be reversed
 // right from the Mini card instead of switching to the main Race tab.
 // Hidden on stint 1 since there's nothing before it to undo to.
 function miniUndoHTML() {
@@ -7046,16 +7080,27 @@ function buildMiniPipHTML() {
   var tcOn = rp.calcTyreChange[prevNum] || false;
   var connected = !!(miniBridgeState && miniBridgeState.connected);
 
+  // Actual pit lap / fuel in car come from the SAME rp.pendingPit /
+  // rp.actualFuelInCar fields rpFillFromIRacing() writes and Desktop/Mobile
+  // already read (see rpPrefillPitLap / rpPrefillFuelInCar) — not a separate
+  // raw telemetry stream. That means these only change the moment you press
+  // S (or the ⚡ button elsewhere), same as every other overlay; there's no
+  // continuous "live" number ticking up in the background between presses.
+  var pulledLap = rp.pendingPit[prevNum];
+  var pulledFuelStr = rp.actualFuelInCar[s.num];
+
   var actualCell, fuelCell, heroVal;
-  if (connected) {
-    var lap = Math.max(0, Math.round(miniBridgeState.lap));
-    var fuel = Math.max(0, miniBridgeState.fuelLevel);
+  if (pulledLap !== undefined) {
+    actualCell = '<div class="livery-tag actual"><div class="livery-tag-lbl"><span class="live-dot"></span>Actual</div><div class="livery-tag-val">' + pulledLap + '</div></div>';
+  } else {
+    actualCell = '<div class="livery-tag actual stale"><div class="livery-tag-lbl"><span class="live-dot off"></span>Actual</div><div class="livery-tag-val">&mdash;</div></div>';
+  }
+  if (pulledFuelStr !== undefined) {
+    var fuel = parseFloat(pulledFuelStr) || 0;
     var addVal = Math.max(0, s.fwm - fuel);
-    actualCell = '<div class="livery-tag actual"><div class="livery-tag-lbl"><span class="live-dot"></span>Actual</div><div class="livery-tag-val">' + lap + '</div></div>';
     fuelCell = '<div class="livery-tag fuel"><div class="livery-tag-lbl"><span class="live-dot"></span>Fuel Left</div><div class="livery-tag-val">' + fuel.toFixed(1) + 'L</div></div>';
     heroVal = '<div class="livery-hero-val">' + Math.ceil(addVal) + '<span class="u">L</span></div>';
   } else {
-    actualCell = '<div class="livery-tag actual stale"><div class="livery-tag-lbl"><span class="live-dot off"></span>Actual</div><div class="livery-tag-val">&mdash;</div></div>';
     fuelCell = '<div class="livery-tag fuel stale"><div class="livery-tag-lbl"><span class="live-dot off"></span>Fuel Left</div><div class="livery-tag-val">&mdash;</div></div>';
     heroVal = '<div class="livery-hero-val" style="color:var(--mu)">&mdash;</div>';
   }
@@ -7064,7 +7109,7 @@ function buildMiniPipHTML() {
     + '<span class="livery-title">Pit Wall</span>'
     + (s.isLast ? '<span class="livery-final">LAST STINT</span>' : '')
     + (connected
-      ? '<span class="livery-live"><span class="live-dot"></span>LIVE</span>'
+      ? '<span class="livery-live"><span class="live-dot"></span>CONNECTED</span>'
       : '<span class="livery-live off"><span class="live-dot off"></span>NO SIGNAL</span>')
     + miniUndoHTML()
     + '</div><div class="livery-body">'
@@ -7160,7 +7205,6 @@ function pipBuildMobileCardHTML() {
   var dispUnit = curMode === 'pit' ? 'lap' : 'L';
   var dispOpacity = curMode === 'pit' ? (rp.pendingPit[prevNum] !== undefined ? '1' : (prefPit ? '0.45' : '1')) : (rp.actualFuelInCar[s.num] !== undefined ? '1' : '0.45');
 
-  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button class="m-ir-btn pip-ir-btn" data-ir="' + s.num + '" title="Pull actual pit lap + fuel remaining live from iRacing">⚡ Pull from iRacing</button></div>';
   html += '<div class="m-np" id="pipMnp">';
   html += '<div class="m-np-tabs"><div class="m-np-tab ' + (curMode === 'pit' ? 'pit-on' : '') + '" data-mode="pit">Actual pit lap</div><div class="m-np-tab ' + (curMode === 'fuel' ? 'fuel-on' : '') + '" data-mode="fuel">Fuel in car</div></div>';
   html += '<div class="m-np-disp" style="border-color:' + dispCol + ';color:' + dispCol + ';opacity:' + dispOpacity + '">' + dispVal + ' <span style="font-size:13px;color:var(--mu)">' + dispUnit + '</span></div>';
@@ -7243,9 +7287,6 @@ function bindPipMobileCard(host) {
 
   var confBtn = host.querySelector('.pip-conf-btn');
   if (confBtn) confBtn.addEventListener('click', function () { mobNpMode[sn] = 'fuel'; syncPipCard(); });
-
-  var irBtn = host.querySelector('.pip-ir-btn');
-  if (irBtn) irBtn.addEventListener('click', function (e) { e.stopPropagation(); rpFillFromIRacing(sn); });
 
   var tyreToggle = host.querySelector('.pip-tyre-toggle');
   if (tyreToggle) tyreToggle.addEventListener('click', function () {
