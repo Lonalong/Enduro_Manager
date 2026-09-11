@@ -3047,6 +3047,14 @@ function rpHandleGo(sn) {
 
 // UNDO: reverse last GO
 function rpHandleUndo() {
+  // A completed race isn't just "one stint past the end" — rp.raceCompleted
+  // also gates which card every surface (main tab, Desktop/Mobile pop-out,
+  // Mini) renders, so undoing it has to go through rpUndoRaceComplete
+  // (which clears that flag) rather than falling into the normal
+  // stint-snapshot path below, which never touches the flag and would leave
+  // every surface stuck showing the completed card even after the
+  // underlying data was restored.
+  if (rp.raceCompleted) { rpUndoRaceComplete(); return; }
   if (rp.currentStint <= 1) return;
   // Reset timer if undoing back to stint 1
   if (rp.currentStint === 2) rp.raceGoStartMs = null;
@@ -6996,6 +7004,12 @@ function miniPollOnce() {
 // from what the main Race tab and other overlays do for the same action.
 function miniHandleHotkey(hotkey) {
   if (!hotkey) return;
+  // 'undo' is handled before the stint lookup below on purpose: once the
+  // race is completed, rp.currentStint points one past the last real stint,
+  // so it has no matching entry in rp.calcStints and the lookup below would
+  // return nothing — silently swallowing the Backspace/undo hotkey right
+  // when it's needed to back out of the completed screen.
+  if (hotkey === 'undo') { rpHandleUndo(); return; }
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
   if (!s) return;
   // No isLast guard here on purpose — verified against a simulated race that
@@ -7007,8 +7021,6 @@ function miniHandleHotkey(hotkey) {
     miniToggleTyre();
   } else if (hotkey === 'go') {
     rpHandleGo(s.num);
-  } else if (hotkey === 'undo') {
-    rpHandleUndo();
   }
 }
 
