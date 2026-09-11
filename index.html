@@ -4872,15 +4872,23 @@ if(tzSel)tzSel.addEventListener('change',function(){renderDriverPage();});
 
 // Enter key triggers GO on race page
 document.addEventListener('keydown', function(e) {
-  if (e.key !== 'Enter') return;
   var racePage = document.getElementById('tab-race');
   if (!racePage || !racePage.classList.contains('active')) return;
   var tag = document.activeElement ? document.activeElement.tagName : '';
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-  var sn = rp.currentStint;
-  var s = rp.calcStints && rp.calcStints.find(function(x){ return x.num === sn; });
-  if (!s) return;
-  rpHandleGo(sn);
+  if (e.key === 'Enter') {
+    var sn = rp.currentStint;
+    var s = rp.calcStints && rp.calcStints.find(function(x){ return x.num === sn; });
+    if (!s) return;
+    rpHandleGo(sn);
+  } else if (e.key === 'Backspace') {
+    // Outside a text field, Backspace normally navigates the browser back a
+    // page — preventDefault stops that so it can't accidentally leave the
+    // app, then it doubles as Undo for the most recent GO (rpHandleUndo is
+    // already a no-op on stint 1, so no extra guard needed here).
+    e.preventDefault();
+    rpHandleUndo();
+  }
 });
 // ========== END DRIVER PAGE JS ==========
 
@@ -6784,6 +6792,18 @@ async function popOutRaceCard() {
   }
 
   pipWindow.addEventListener('pagehide', function () { pipWindow = null; miniStopPolling(); });
+
+  // Backspace = Undo in the pop-out too — it's a separate window/document
+  // from the main page, so the main document's keydown listener never sees
+  // this one; same guard against text fields, same preventDefault so a
+  // stray Backspace can't navigate this popout back instead.
+  pipWindow.addEventListener('keydown', function (e) {
+    if (e.key !== 'Backspace') return;
+    var tag = pipWindow.document.activeElement ? pipWindow.document.activeElement.tagName : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    rpHandleUndo();
+  });
 
   if (pipFormat === 'mobile') {
     var applyPipScale = function () {
