@@ -1063,7 +1063,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
       <div class="rp-strat-btns" style="margin-left:4px">
         <button class="rp-strat-btn active" id="pipFmtDesktop" data-fmt="desktop">Desktop</button>
         <button class="rp-strat-btn" id="pipFmtMobile" data-fmt="mobile">Mobile</button>
-        <button class="rp-strat-btn" id="pipFmtMini" data-fmt="mini" title="Compact bridge-driven overlay — pit lap, fuel, tyre status, plus S/C/Enter/Backspace keyboard hotkeys">Mini</button>
+        <button class="rp-strat-btn" id="pipFmtMini" data-fmt="mini" title="Compact bridge-driven overlay — pit lap, fuel, tyre status, plus S/C/G/Backspace keyboard hotkeys">Mini</button>
       </div>
       <button class="rp-sbtn" style="border-color:var(--ac);color:var(--ac);background:rgba(79,142,247,.15)" id="rpPopOut">⧉ Pop out overlay</button>
     </div>
@@ -6936,7 +6936,7 @@ function bindPipCard(host) {
 // ========== MINI PIP (compact racing-livery overlay, bridge-driven) ==========
 // Deliberately the simplest of the three overlay formats: no numpad, no GO
 // button, no click targets except the tyre line — everything else comes
-// from iracing_bridge.exe's S/C/Enter/Backspace global hotkeys, reported
+// from iracing_bridge.exe's S/C/G/Backspace global hotkeys, reported
 // back via a background poll of /telemetry. That poll is intentionally
 // lightweight, though: it's only there so the hotkeys work even while
 // iRacing has focus (there's no other way for the browser to learn a global
@@ -6990,7 +6990,7 @@ function miniPollOnce() {
     });
 }
 
-// S/C/Enter/Backspace land here the same way a click on the equivalent Race-tab control
+// S/C/G/Backspace land here the same way a click on the equivalent Race-tab control
 // would — reusing rpFillFromIRacing / rpHandleGo / the tyre-toggle logic
 // directly rather than reimplementing them, so the Mini PIP can never drift
 // from what the main Race tab and other overlays do for the same action.
@@ -7025,7 +7025,7 @@ function miniToggleTyre() {
 }
 
 // Small "↩" in the header — same rpHandleUndo() as every other Undo button
-// in the app, so a mis-press of Enter (or C, or a bad S pull) can be reversed
+// in the app, so a mis-press of G (or C, or a bad S pull) can be reversed
 // right from the Mini card instead of switching to the main Race tab.
 // Hidden on stint 1 since there's nothing before it to undo to.
 function miniUndoHTML() {
@@ -7037,8 +7037,8 @@ function miniUndoHTML() {
 function buildMiniPipHTML() {
   if (rp.raceCompleted) {
     return '<div class="livery-win"><div class="livery-hdr"><span class="livery-title">Pit Wall</span></div>'
-      + '<div class="livery-body" style="text-align:center;padding:22px 10px">'
-      + '<div class="livery-hero-lbl" style="margin-bottom:8px">Race Complete</div>'
+      + '<div class="livery-body" style="text-align:center;padding:24px 10px">'
+      + '<div class="livery-hero-lbl" style="margin-bottom:10px;color:var(--mu);font-family:\'Teko\',\'SF Mono\',sans-serif;font-weight:600;font-size:34px;letter-spacing:.02em;text-transform:none">Last Stint!</div>'
       + '<button class="livery-undo-completed" data-mini-undo-completed="1">&#8617; Undo</button>'
       + '</div></div>';
   }
