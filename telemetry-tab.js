@@ -42,6 +42,74 @@ var telState = {
   actualFuelPerLap: null,
 };
 
+// ── Empty/placeholder states — shown before Connect is pressed, and
+// restored when Stop Live Feed is pressed, so the tab always reads as
+// "ready and waiting" rather than blank/broken. ─────────────────────
+
+function telPlaceholderHeader() {
+  return '<div class="tel-header-placeholder">Session info appears once connected</div>';
+}
+
+function telPlaceholderStandings() {
+  return (
+    '<div class="tel-row tel-row-hdr">' +
+      '<span class="tel-c-pos">POS</span><span class="tel-c-car">CAR</span>' +
+      '<span class="tel-c-gap">GAP</span><span class="tel-c-int">INT</span><span class="tel-c-last">LAST</span>' +
+    '</div>' +
+    '<div class="tel-empty-sm">Standings appear once connected and on track</div>'
+  );
+}
+
+function telPlaceholderLapStats() {
+  return telStatCard('LAST LAP', '--:--.-', 'tel-placeholder') +
+    telStatCard('BEST LAP', '--:--.-', 'tel-placeholder') +
+    telStatCard('AVG LAP', '--:--.-', 'tel-placeholder');
+}
+
+function telPlaceholderFuelStats() {
+  return telStatCard('FUEL LEVEL', '-- L', 'tel-placeholder') +
+    telStatCard('TARGET /LAP', '-- L', 'tel-placeholder') +
+    telStatCard('ACTUAL /LAP', '-- L', 'tel-placeholder') +
+    telStatCard('LAPS LEFT', '--', 'tel-placeholder');
+}
+
+function telPlaceholderTyres() {
+  return ['FL', 'FR', 'RL', 'RR'].map(function (pos) {
+    return (
+      '<div class="tel-tyre">' +
+        '<div class="tel-tyre-strip tel-tyre-strip-placeholder"><span></span><span></span><span></span></div>' +
+        '<div class="tel-tyre-pos tel-placeholder">' + pos + '</div>' +
+        '<div class="tel-tyre-wear tel-placeholder">--%</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function telPlaceholderSectors() {
+  return '<div class="tel-empty-sm">Sector comparison appears once connected and a lap is completed</div>';
+}
+
+function telResetToPlaceholders() {
+  var header = document.getElementById('telHeader');
+  if (header) { header.classList.add('tel-empty'); header.innerHTML = telPlaceholderHeader(); }
+  var standings = document.getElementById('telStandings');
+  if (standings) standings.innerHTML = telPlaceholderStandings();
+  var lapStats = document.getElementById('telLapStats');
+  if (lapStats) lapStats.innerHTML = telPlaceholderLapStats();
+  var fuelStats = document.getElementById('telFuelStats');
+  if (fuelStats) fuelStats.innerHTML = telPlaceholderFuelStats();
+  var tyres = document.getElementById('telTyres');
+  if (tyres) tyres.innerHTML = telPlaceholderTyres();
+  var badge = document.getElementById('telTyreLiveBadge');
+  if (badge) { badge.textContent = ''; badge.className = 'tel-tyre-live-badge'; }
+  var stripEl = document.getElementById('telSectorStrip');
+  if (stripEl) { stripEl.className = 'tel-sectorstrip'; stripEl.innerHTML = ''; }
+  var sectorList = document.getElementById('telSectorList');
+  if (sectorList) sectorList.innerHTML = telPlaceholderSectors();
+  var sectorFoot = document.getElementById('telSectorFoot');
+  if (sectorFoot) sectorFoot.textContent = '';
+}
+
 // ── Tab skeleton (built once per page load, refreshed on data after) ────
 
 function telRenderTab() {
@@ -55,14 +123,17 @@ function telRenderTab() {
           '<button class="tel-connect-btn" id="telConnectBtn">&#9889; Connect to iRacing</button>' +
           '<div class="tel-status" id="telStatusDot"><span class="tel-dot tel-dot-standby"></span><span>STANDBY</span></div>' +
         '</div>' +
-        '<div id="telHeader" class="tel-header tel-empty">Connect to iRacing to see live session info.</div>' +
+        '<div id="telHeader" class="tel-header tel-empty"></div>' +
         '<div id="telStandings" class="tel-standings"></div>' +
         '<div class="tel-yourcar-label"><span class="tel-accent-bar tel-accent-ac"></span>YOUR CAR</div>' +
         '<div id="telLapStats" class="tel-lapstats"></div>' +
         '<div id="telFuelStats" class="tel-fuelstats"></div>' +
         '<div class="tel-bottom-row">' +
           '<div class="tel-col">' +
-            '<div class="tel-panel-label"><span class="tel-accent-bar tel-accent-ac"></span>TYRES</div>' +
+            '<div class="tel-panel-label tel-panel-label-row">' +
+              '<span><span class="tel-accent-bar tel-accent-ac"></span>TYRES</span>' +
+              '<span id="telTyreLiveBadge" class="tel-tyre-live-badge tel-badge-unknown">CHECKING\u2026</span>' +
+            '</div>' +
             '<div id="telTyres" class="tel-tyres"></div>' +
           '</div>' +
           '<div class="tel-col">' +
@@ -92,6 +163,7 @@ function telRenderTab() {
     });
 
     telState.domBuilt = true;
+    telResetToPlaceholders(); // paint the "ready and waiting" state immediately, before any Connect click
   }
 
   telSetStatus(telState.connected ? 'connected' : 'standby');
@@ -108,6 +180,11 @@ function telConnect() {
   telState.lastLap = null;   // force a full lap-scoped redraw on the very next poll
   telState.fuelAtLapStart = null;
   telState.actualFuelPerLap = null;
+  // Fresh session, fresh guess about whether this car exposes live tyre
+  // data — see telDetectTyreLiveness. Most cars don't (iRacing withholds
+  // it on-track by design); a few with real TPMS do.
+  telState.tyreLiveness = 'unknown'; // 'unknown' | 'live' | 'snapshot'
+  telState.prevTyres = null;
   var btn = document.getElementById('telConnectBtn');
   if (btn) { btn.textContent = '\u25CF Stop Live Feed'; btn.classList.add('tel-connect-btn-active'); }
   telSetStatus('connected');
@@ -121,6 +198,7 @@ function telDisconnect() {
   var btn = document.getElementById('telConnectBtn');
   if (btn) { btn.textContent = '\u26A1 Connect to iRacing'; btn.classList.remove('tel-connect-btn-active'); }
   telSetStatus('standby');
+  telResetToPlaceholders(); // don't leave stale last-known data on screen once stopped
 }
 
 function telSetStatus(kind) {
@@ -150,7 +228,9 @@ function telPoll() {
       telSetStatus('connected');
       telState.lastData = data;
 
-      // Instant, every tick — these change continuously.
+      // Instant, every tick — these change continuously (when the car
+      // supports it — see telDetectTyreLiveness).
+      telDetectTyreLiveness(data);
       telRenderTyres(data);
       telRenderFuelStats(data);
 
@@ -194,6 +274,43 @@ function telFmtClock(sec) {
 function telFmtDelta(sec) {
   if (sec == null) return '\u2013';
   return (sec >= 0 ? '+' : '') + sec.toFixed(1);
+}
+
+// ── Tyre live-data detection ─────────────────────────────────────────
+// iRacing deliberately withholds live tyre pressure/temp/wear while
+// on-track for most cars (anti-cheat — matches the in-car "black box"
+// pit review screen, which only refreshes when you're actually in the
+// pits). A handful of cars with real-world TPMS DO expose it live. Since
+// that list can change over time, detect it at runtime instead of
+// hard-coding cars: if values are actually moving while driving (not on
+// pit road), this car supports live data — flip the badge on and leave
+// it on for the rest of the session.
+function telDetectTyreLiveness(data) {
+  if (telState.tyreLiveness === 'live') return; // already confirmed, nothing to re-check
+  var t = data.tyres || {};
+  var prev = telState.prevTyres;
+  if (!data.onPitRoad && prev) {
+    var changed = ['lf', 'rf', 'lr', 'rr'].some(function (k) {
+      var a = prev[k] || {}, b = t[k] || {};
+      var dP = (a.pressureKpa != null && b.pressureKpa != null) ? Math.abs(a.pressureKpa - b.pressureKpa) : 0;
+      var dT = (a.tempC != null && b.tempC != null) ? Math.abs(a.tempC - b.tempC) : 0;
+      return dP > 0.3 || dT > 0.3; // small threshold — real sensor noise, not float jitter
+    });
+    if (changed) telState.tyreLiveness = 'live';
+    else if (telState.tyreLiveness === 'unknown') telState.tyreLiveness = 'snapshot';
+  }
+  telState.prevTyres = t;
+
+  var badge = document.getElementById('telTyreLiveBadge');
+  if (badge) {
+    if (telState.tyreLiveness === 'live') {
+      badge.textContent = 'LIVE'; badge.className = 'tel-tyre-live-badge tel-badge-live';
+    } else if (telState.tyreLiveness === 'snapshot') {
+      badge.textContent = 'AS OF LAST PIT STOP'; badge.className = 'tel-tyre-live-badge tel-badge-snapshot';
+    } else {
+      badge.textContent = 'CHECKING\u2026'; badge.className = 'tel-tyre-live-badge tel-badge-unknown';
+    }
+  }
 }
 
 // ── Section renderers ────────────────────────────────────────────────
@@ -290,6 +407,16 @@ function telStatCard(label, value, extraClass) {
     '<div class="tel-stat-value ' + (extraClass || '') + '">' + value + '</div></div>';
 }
 
+// ── Temperature color scale (drives the tyre strip's 3 zones only —
+// wear % and pressure have their own separate, independent color rules).
+function telTempColor(c) {
+  if (c == null) return 'var(--bd)';
+  if (c < 70) return '#3a7bd5';           // cold — hasn't reached working range
+  if (c < 100) return 'var(--tg)';        // optimal
+  if (c < 115) return 'var(--ye)';        // running hot
+  return 'var(--re)';                     // overheating
+}
+
 function telRenderTyres(data) {
   var el = document.getElementById('telTyres');
   if (!el) return;
@@ -300,9 +427,21 @@ function telRenderTyres(data) {
     var wear = v.wearPct;
     var wearClass = wear == null ? '' : (wear >= 70 ? 'tel-good' : (wear >= 50 ? 'tel-warn' : 'tel-bad'));
     var tempClass = (v.tempC != null && v.tempC >= 100) ? 'tel-bad' : '';
+    var zones = v.tempZones || {};
+    // Strip zones are drawn in outer -> mid -> inner order, left to right,
+    // regardless of which side of the car the tyre is on — the bridge has
+    // already corrected for FL/RL vs FR/RR having their raw L/R readings
+    // mirrored, so "outer" here always means the same physical edge.
+    var outerColor = telTempColor(zones.outer);
+    var midColor = telTempColor(zones.mid);
+    var innerColor = telTempColor(zones.inner);
     return (
       '<div class="tel-tyre">' +
-        '<div class="tel-tyre-strip"><span></span><span></span><span></span></div>' +
+        '<div class="tel-tyre-strip">' +
+          '<span style="background:' + outerColor + '"></span>' +
+          '<span style="background:' + midColor + '"></span>' +
+          '<span style="background:' + innerColor + '"></span>' +
+        '</div>' +
         '<div class="tel-tyre-pos">' + pair[1] + '</div>' +
         '<div class="tel-tyre-wear ' + wearClass + '">' + (wear != null ? wear + '%' : '\u2013') + '</div>' +
         '<div class="tel-tyre-sub">' + (v.pressureKpa != null ? Math.round(v.pressureKpa) + ' kPa' : '\u2013') + '</div>' +
@@ -329,11 +468,23 @@ function telRenderSectors(data) {
     return;
   }
 
-  // Strip: numbers only, widths proportional to each sector's real length.
+  // At high sector counts, a busy track eats its own legibility: the "S"
+  // prefix plus the strip's gap/border all cost space that matters more
+  // as segments get numerous and individually narrower. Above 8 sectors,
+  // switch to a denser variant — bare numbers, tighter gap/border —
+  // rather than letting text clip or segments look overcrowded.
+  var DENSE_THRESHOLD = 8;
+  var isDense = rows.length > DENSE_THRESHOLD;
+  stripEl.className = 'tel-sectorstrip' + (isDense ? ' tel-sectorstrip-dense' : '');
+
+  // Strip: "S1"/"S2" labels normally, bare "1"/"2" once dense — widths
+  // proportional to each sector's real length either way. Bordered
+  // pit-board-style blocks — see telemetry-tab.css .tel-seg.
   stripEl.innerHTML = rows.map(function (r, i) {
     var w = widths[i] != null ? widths[i] : (1 / rows.length);
     var cls = r.delta == null ? 'tel-seg-neutral' : (r.delta <= 0 ? 'tel-seg-good' : 'tel-seg-bad');
-    return '<div class="tel-seg ' + cls + '" style="flex:' + w + '">' + r.sector + '</div>';
+    var label = isDense ? String(r.sector) : ('S' + r.sector);
+    return '<div class="tel-seg ' + cls + '" style="flex:' + w + '">' + label + '</div>';
   }).join('');
 
   listEl.innerHTML = rows.map(function (r) {

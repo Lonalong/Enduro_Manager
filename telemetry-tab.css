@@ -5,89 +5,111 @@
    of the app automatically if the theme ever changes.
    ============================================================ */
 
-#tab-telemetry { padding: 16px; font-variant-numeric: tabular-nums; }
-.tel-wrap { max-width: 900px; margin: 0 auto; }
+#tab-telemetry { padding: 20px; font-variant-numeric: tabular-nums; }
+.tel-wrap { max-width: 960px; margin: 0 auto; }
 
 /* Connect bar */
-.tel-connectbar { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.tel-connectbar { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
 .tel-connect-btn {
   border: 1px solid var(--ac); color: var(--ac); background: rgba(79,142,247,.15);
-  padding: 8px 16px; border-radius: var(--r); font-size: 12px; font-weight: 700;
+  padding: 10px 20px; border-radius: var(--r); font-size: 14px; font-weight: 700;
   font-family: inherit; cursor: pointer;
 }
 .tel-connect-btn:hover { background: rgba(79,142,247,.25); }
 .tel-connect-btn-active { border-color: var(--re); color: var(--re); background: rgba(247,95,95,.1); }
 .tel-connect-btn-active:hover { background: rgba(247,95,95,.18); }
-.tel-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--mu); }
-.tel-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.tel-status { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--mu); }
+.tel-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .tel-dot-standby { background: var(--mu); }
 .tel-dot-connected { background: var(--tg); }
 .tel-dot-nosignal { background: var(--re); }
 
 /* Header */
 .tel-header {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-  padding: 8px 12px; background: var(--sf); border-radius: var(--r); margin-bottom: 12px; font-size: 12px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  padding: 12px 16px; background: var(--sf); border-radius: var(--r); margin-bottom: 16px; font-size: 15px;
 }
 .tel-header.tel-empty { color: var(--mu); justify-content: flex-start; }
-.tel-badge { font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 4px; letter-spacing: .04em; }
+.tel-header-placeholder { color: var(--mu); font-size: 14px; width: 100%; text-align: center; }
+.tel-placeholder { color: #3a3f4d !important; }
+.tel-tyre-strip-placeholder { background: var(--s2); border: 1px dashed var(--bd); }
+.tel-tyre-strip-placeholder span { background: transparent; }
+.tel-badge { font-size: 12px; font-weight: 900; padding: 4px 11px; border-radius: 4px; letter-spacing: .04em; }
 .tel-badge-race { background: var(--re); color: #2a0505; }
 .tel-badge-qual { background: var(--ye); color: #2a2005; }
 .tel-badge-prac { background: var(--tg); color: #04140c; }
 .tel-header-mid { font-weight: 900; color: var(--tx); }
-.tel-header-weather { color: var(--mu); }
+.tel-header-weather { color: var(--mu); font-size: 13px; }
 
 /* Standings */
-.tel-standings { background: var(--sf); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+.tel-standings { background: var(--sf); border-radius: var(--r); overflow: hidden; margin-bottom: 18px; }
 .tel-row {
-  display: grid; grid-template-columns: 34px 1fr 70px 60px 60px; align-items: center;
-  padding: 6px 12px; gap: 4px; font-size: 12px; border-top: 1px solid var(--bd);
+  display: grid; grid-template-columns: 40px 1fr 80px 68px 68px; align-items: center;
+  padding: 11px 16px; gap: 5px; font-size: 14px; border-top: 1px solid var(--bd);
 }
 .tel-row:first-child { border-top: none; }
-.tel-row-hdr { background: var(--s2); font-size: 10px; color: var(--mu); font-weight: 700; border-top: none; }
-.tel-row-leader { border-left: 3px solid var(--ye); }
-.tel-row-you { background: rgba(79,142,247,.15); border-left: 3px solid var(--ac); font-weight: 900; color: var(--ac); }
-.tel-c-pos { font-weight: 900; }
+.tel-row-hdr { background: var(--s2); font-size: 12px; color: var(--mu); font-weight: 700; border-top: none; padding: 9px 16px; }
+.tel-row-leader { border-left: 4px solid var(--ye); }
+.tel-row-you { background: rgba(79,142,247,.15); border-left: 4px solid var(--ac); font-weight: 900; color: var(--ac); font-size: 15px; }
+.tel-c-pos { font-weight: 900; font-size: 16px; }
 .tel-c-gap, .tel-c-int, .tel-c-last { text-align: right; }
-.tel-standings-scroll { max-height: 220px; overflow-y: auto; }
+.tel-standings-scroll { max-height: 260px; overflow-y: auto; }
 
 /* Your car */
-.tel-yourcar-label, .tel-panel-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; letter-spacing: .05em; color: var(--ac); margin-bottom: 8px; }
+.tel-yourcar-label, .tel-panel-label {
+  display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 900;
+  letter-spacing: .05em; color: var(--ac); margin-bottom: 12px;
+}
 .tel-panel-label-row { justify-content: space-between; }
-.tel-accent-bar { width: 3px; height: 12px; display: inline-block; border-radius: 2px; }
+.tel-tyre-live-badge { font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 10px; letter-spacing: .03em; }
+.tel-badge-live { background: var(--tg); color: #04140c; }
+.tel-badge-snapshot { background: var(--s2); color: var(--mu); }
+.tel-badge-unknown { background: var(--s2); color: var(--mu); }
+.tel-accent-bar { width: 4px; height: 16px; display: inline-block; border-radius: 2px; flex-shrink: 0; }
 .tel-accent-ac { background: var(--ac); }
 .tel-accent-ye { background: var(--ye); }
 
-.tel-lapstats, .tel-fuelstats { display: grid; gap: 3px; margin-bottom: 3px; }
+.tel-lapstats, .tel-fuelstats { display: grid; gap: 4px; margin-bottom: 4px; }
 .tel-lapstats { grid-template-columns: repeat(3, 1fr); }
-.tel-fuelstats { grid-template-columns: repeat(4, 1fr); margin-bottom: 14px; }
-.tel-stat { background: var(--sf); padding: 9px; text-align: center; border-radius: 4px; }
-.tel-stat-label { font-size: 9px; color: var(--mu); margin-bottom: 2px; }
-.tel-stat-value { font-size: 16px; font-weight: 900; color: var(--tx); }
+.tel-fuelstats { grid-template-columns: repeat(4, 1fr); margin-bottom: 18px; }
+.tel-stat { background: var(--sf); padding: 14px; text-align: center; border-radius: 5px; }
+.tel-stat-label { font-size: 11px; color: var(--mu); margin-bottom: 4px; }
+.tel-stat-value { font-size: 21px; font-weight: 900; color: var(--tx); }
 
 /* Bottom row: tyres + sectors */
-.tel-bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.tel-tyres { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tel-bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.tel-tyres { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .tel-tyre { text-align: center; }
-.tel-tyre-strip { display: flex; height: 40px; border-radius: 5px; overflow: hidden; background: var(--s2); margin: 0 auto 4px; width: 44px; }
+.tel-tyre-strip { display: flex; height: 90px; border-radius: 6px; overflow: hidden; background: var(--s2); margin: 0 auto 7px; width: 56px; }
 .tel-tyre-strip span { flex: 1; background: var(--bd); }
-.tel-tyre-pos { font-size: 10px; font-weight: 900; color: var(--tx); }
-.tel-tyre-wear { font-size: 13px; font-weight: 900; }
-.tel-tyre-sub { font-size: 9px; color: var(--mu); }
+.tel-tyre-pos { font-size: 13px; font-weight: 900; color: var(--tx); }
+.tel-tyre-wear { font-size: 17px; font-weight: 900; }
+.tel-tyre-sub { font-size: 12px; color: var(--mu); }
 
-.tel-sectorstrip { display: flex; height: 22px; border-radius: var(--r); overflow: hidden; margin-bottom: 8px; }
-.tel-seg { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; }
+/* Sector strip — motorsport pit-board style: bordered blocks, S# labels,
+   heavy block font, high-contrast text per fill color. A denser variant
+   (.tel-sectorstrip-dense, applied by JS when sector count is high) tightens
+   the gap/border and drops the "S" prefix so busy tracks stay legible. */
+.tel-sectorstrip { display: flex; height: 34px; gap: 3px; margin-bottom: 12px; }
+.tel-sectorstrip-dense { gap: 1px; }
+.tel-seg {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 900; font-family: 'Arial Black', Arial, sans-serif;
+  border: 2px solid var(--bg);
+}
+.tel-sectorstrip-dense .tel-seg { font-size: 12px; border-width: 1px; }
 .tel-seg-good { background: var(--tg); color: #04140c; }
-.tel-seg-bad { background: var(--re); color: #2a0505; }
+.tel-seg-bad { background: var(--re); color: #fff; }
 .tel-seg-neutral { background: var(--bd); color: var(--mu); }
 .tel-sectorlist { background: var(--sf); border-radius: var(--r); overflow: hidden; }
-.tel-sector-row { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 11px; border-top: 1px solid var(--bd); }
+.tel-sector-row { display: flex; justify-content: space-between; padding: 11px 15px; font-size: 14px; border-top: 1px solid var(--bd); }
 .tel-sector-row:first-child { border-top: none; }
-.tel-sectorfoot { font-size: 10px; color: var(--mu); margin-top: 6px; }
+.tel-sector-row span:last-child { font-size: 15px; font-weight: 900; }
+.tel-sectorfoot { font-size: 12px; color: var(--mu); margin-top: 9px; }
 
 /* Toggle */
-.tel-toggle { display: flex; background: var(--s2); border-radius: 12px; padding: 2px; }
-.tel-toggle-opt { font-size: 9px; font-weight: 700; color: var(--mu); padding: 3px 9px; border-radius: 10px; cursor: pointer; }
+.tel-toggle { display: flex; background: var(--s2); border-radius: 14px; padding: 3px; }
+.tel-toggle-opt { font-size: 11px; font-weight: 700; color: var(--mu); padding: 5px 12px; border-radius: 12px; cursor: pointer; }
 .tel-toggle-active { background: var(--ac); color: #04140c; font-weight: 900; }
 
 /* Status colors reused by tyres/fuel */
@@ -95,9 +117,9 @@
 .tel-warn { color: var(--ye) !important; }
 .tel-bad { color: var(--re) !important; }
 
-.tel-empty-sm { padding: 14px; text-align: center; color: var(--mu); font-size: 11px; }
+.tel-empty-sm { padding: 18px; text-align: center; color: var(--mu); font-size: 13px; }
 
 @media (max-width: 720px) {
   .tel-bottom-row { grid-template-columns: 1fr; }
-  .tel-row { grid-template-columns: 26px 1fr 55px 50px 50px; font-size: 11px; }
+  .tel-row { grid-template-columns: 30px 1fr 60px 55px 55px; font-size: 13px; padding: 10px 12px; }
 }
