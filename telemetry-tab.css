@@ -57,7 +57,7 @@
 
 /* Your car */
 .tel-yourcar-label, .tel-panel-label {
-  display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 900;
+  display: flex; align-items: center; font-size: 13px; font-weight: 900;
   letter-spacing: .05em; color: var(--ac); margin-bottom: 12px;
 }
 .tel-panel-label-row { justify-content: space-between; }
@@ -65,7 +65,7 @@
 .tel-badge-live { background: var(--tg); color: #04140c; }
 .tel-badge-snapshot { background: var(--s2); color: var(--mu); }
 .tel-badge-unknown { background: var(--s2); color: var(--mu); }
-.tel-accent-bar { width: 4px; height: 16px; display: inline-block; border-radius: 2px; flex-shrink: 0; }
+.tel-accent-bar { width: 4px; height: 16px; display: inline-block; border-radius: 2px; flex-shrink: 0; margin-right: 10px; vertical-align: middle; }
 .tel-accent-ac { background: var(--ac); }
 .tel-accent-ye { background: var(--ye); }
 
