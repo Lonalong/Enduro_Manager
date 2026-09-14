@@ -18,6 +18,13 @@
 .tel-connect-btn:hover { background: rgba(79,142,247,.25); }
 .tel-connect-btn-active { border-color: var(--re); color: var(--re); background: rgba(247,95,95,.1); }
 .tel-connect-btn-active:hover { background: rgba(247,95,95,.18); }
+.tel-clearlog-btn {
+  border: 1px solid var(--mu); color: var(--mu); background: transparent;
+  padding: 10px 16px; border-radius: var(--r); font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer;
+}
+.tel-clearlog-btn:hover { background: var(--sf); }
+.tel-log-status { color: var(--mu); font-size: 12px; margin-bottom: 14px; }
 .tel-status { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--mu); }
 .tel-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .tel-dot-standby { background: var(--mu); }
@@ -65,13 +72,11 @@
 .tel-badge-live { background: var(--tg); color: #04140c; }
 .tel-badge-snapshot { background: var(--s2); color: var(--mu); }
 .tel-badge-unknown { background: var(--s2); color: var(--mu); }
-.tel-accent-bar { width: 4px; height: 16px; display: inline-block; border-radius: 2px; flex-shrink: 0; margin-right: 10px; vertical-align: middle; }
-.tel-accent-ac { background: var(--ac); }
-.tel-accent-ye { background: var(--ye); }
 
 .tel-lapstats, .tel-fuelstats { display: grid; gap: 4px; margin-bottom: 4px; }
 .tel-lapstats { grid-template-columns: repeat(3, 1fr); }
-.tel-fuelstats { grid-template-columns: repeat(4, 1fr); margin-bottom: 18px; }
+.tel-fuelstats { grid-template-columns: repeat(4, 1fr); margin-bottom: 4px; }
+.tel-wearrate { display: grid; margin-bottom: 18px; }
 .tel-stat { background: var(--sf); padding: 14px; text-align: center; border-radius: 5px; }
 .tel-stat-label { font-size: 11px; color: var(--mu); margin-bottom: 4px; }
 .tel-stat-value { font-size: 21px; font-weight: 900; color: var(--tx); }

@@ -37,9 +37,15 @@ var telState = {
   lastData: null,       // most recent full payload, for the sector toggle to re-render from without waiting on a new poll
   sectorMode: 'ahead',  // 'leader' | 'ahead'
   domBuilt: false,
-  // Rolling fuel-per-lap calc: captured at the instant a new lap completes.
+  // Session log — see telResetLog. Initialized here too (not just there)
+  // so nothing crashes if a render function runs before the first Connect.
   fuelAtLapStart: null,
-  actualFuelPerLap: null,
+  lapLog: [],
+  tyreWearAtLogStart: null,
+  tyreWearPerLap: null,
+  lapsSinceLogStart: 0,
+  tyreLiveness: 'unknown',
+  prevTyres: null,
 };
 
 // ── Empty/placeholder states — shown before Connect is pressed, and
@@ -108,6 +114,10 @@ function telResetToPlaceholders() {
   if (sectorList) sectorList.innerHTML = telPlaceholderSectors();
   var sectorFoot = document.getElementById('telSectorFoot');
   if (sectorFoot) sectorFoot.textContent = '';
+  var wearRate = document.getElementById('telWearRate');
+  if (wearRate) wearRate.innerHTML = telStatCard('TYRE WEAR /LAP', '\u2013', 'tel-placeholder');
+  var logStatus = document.getElementById('telLogStatus');
+  if (logStatus) logStatus.textContent = '';
 }
 
 // ── Tab skeleton (built once per page load, refreshed on data after) ────
@@ -121,24 +131,27 @@ function telRenderTab() {
       '<div class="tel-wrap">' +
         '<div class="tel-connectbar">' +
           '<button class="tel-connect-btn" id="telConnectBtn">&#9889; Connect to iRacing</button>' +
+          '<button class="tel-clearlog-btn" id="telClearLogBtn">&#8635; Clear Log</button>' +
           '<div class="tel-status" id="telStatusDot"><span class="tel-dot tel-dot-standby"></span><span>STANDBY</span></div>' +
         '</div>' +
+        '<div id="telLogStatus" class="tel-log-status"></div>' +
         '<div id="telHeader" class="tel-header tel-empty"></div>' +
         '<div id="telStandings" class="tel-standings"></div>' +
-        '<div class="tel-yourcar-label"><span class="tel-accent-bar tel-accent-ac"></span>YOUR CAR</div>' +
+        '<div class="tel-yourcar-label">YOUR CAR</div>' +
         '<div id="telLapStats" class="tel-lapstats"></div>' +
         '<div id="telFuelStats" class="tel-fuelstats"></div>' +
+        '<div id="telWearRate" class="tel-wearrate"></div>' +
         '<div class="tel-bottom-row">' +
           '<div class="tel-col">' +
             '<div class="tel-panel-label tel-panel-label-row">' +
-              '<span><span class="tel-accent-bar tel-accent-ac"></span>TYRES</span>' +
+              '<span>TYRES</span>' +
               '<span id="telTyreLiveBadge" class="tel-tyre-live-badge tel-badge-unknown">CHECKING\u2026</span>' +
             '</div>' +
             '<div id="telTyres" class="tel-tyres"></div>' +
           '</div>' +
           '<div class="tel-col">' +
             '<div class="tel-panel-label tel-panel-label-row">' +
-              '<span><span class="tel-accent-bar tel-accent-ye"></span>SECTORS</span>' +
+              '<span>SECTORS</span>' +
               '<div class="tel-toggle" id="telSectorToggle">' +
                 '<span class="tel-toggle-opt" data-mode="leader">LDR</span>' +
                 '<span class="tel-toggle-opt tel-toggle-active" data-mode="ahead">AHEAD</span>' +
@@ -152,6 +165,7 @@ function telRenderTab() {
       '</div>';
 
     document.getElementById('telConnectBtn').addEventListener('click', telToggleConnect);
+    document.getElementById('telClearLogBtn').addEventListener('click', telClearLog);
     document.getElementById('telSectorToggle').addEventListener('click', function (e) {
       var opt = e.target.closest('.tel-toggle-opt');
       if (!opt) return;
@@ -178,13 +192,7 @@ function telToggleConnect() {
 function telConnect() {
   telState.connected = true;
   telState.lastLap = null;   // force a full lap-scoped redraw on the very next poll
-  telState.fuelAtLapStart = null;
-  telState.actualFuelPerLap = null;
-  // Fresh session, fresh guess about whether this car exposes live tyre
-  // data — see telDetectTyreLiveness. Most cars don't (iRacing withholds
-  // it on-track by design); a few with real TPMS do.
-  telState.tyreLiveness = 'unknown'; // 'unknown' | 'live' | 'snapshot'
-  telState.prevTyres = null;
+  telResetLog();              // reconnecting always starts a fresh log too
   var btn = document.getElementById('telConnectBtn');
   if (btn) { btn.textContent = '\u25CF Stop Live Feed'; btn.classList.add('tel-connect-btn-active'); }
   telSetStatus('connected');
@@ -199,6 +207,7 @@ function telDisconnect() {
   if (btn) { btn.textContent = '\u26A1 Connect to iRacing'; btn.classList.remove('tel-connect-btn-active'); }
   telSetStatus('standby');
   telResetToPlaceholders(); // don't leave stale last-known data on screen once stopped
+  telRenderLogStatus();
 }
 
 function telSetStatus(kind) {
@@ -211,6 +220,103 @@ function telSetStatus(kind) {
   };
   var m = map[kind] || map.standby;
   el.innerHTML = '<span class="tel-dot ' + m[0] + '"></span><span>' + m[1] + '</span>';
+}
+
+// ── Session logging (Clear Log / auto-reset-on-reconnect) ───────────────
+// Turns AVG LAP, ACTUAL/LAP fuel, and TYRE WEAR/LAP from single last-known
+// readings into real running stats accumulated since Connect (or since the
+// last Clear Log / reconnect, whichever was more recent). Everything else
+// in the tab stays a live instant readout, untouched by this.
+
+function telClearLog() {
+  if (!telState.connected) return; // nothing to log yet
+  telResetLog();
+  if (telState.lastData) { // reflect the reset immediately, don't wait for next poll
+    telRenderLapStats(telState.lastData);
+    telRenderFuelStats(telState.lastData);
+    telRenderWearRate();
+    telRenderLogStatus();
+  }
+}
+
+function telResetLog() {
+  // Fresh session, fresh guess about whether this car exposes live tyre
+  // data — see telDetectTyreLiveness. Most cars don't (iRacing withholds
+  // it on-track by design); a few with real TPMS do.
+  telState.tyreLiveness = 'unknown'; // 'unknown' | 'live' | 'snapshot'
+  telState.prevTyres = null;
+
+  telState.fuelAtLapStart = null;
+  telState.lapLog = [];               // [{lapTime, fuelUsed}] — one entry per completed lap since log start
+  telState.tyreWearAtLogStart = null; // avg tread % across 4 wheels, captured at log start
+  telState.tyreWearPerLap = null;     // cached result — see telUpdateWearRate
+  telState.lapsSinceLogStart = 0;
+  telRenderLogStatus();
+}
+
+function telRenderLogStatus() {
+  var el = document.getElementById('telLogStatus');
+  if (!el) return;
+  var n = telState.lapLog ? telState.lapLog.length : 0;
+  el.textContent = telState.connected
+    ? ('Logging since connect \u00b7 ' + n + (n === 1 ? ' lap' : ' laps') + ' recorded')
+    : '';
+}
+
+function telAvg(arr, key) {
+  var vals = arr.map(function (x) { return x[key]; }).filter(function (v) { return v != null; });
+  if (!vals.length) return null;
+  return vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+}
+
+function telAvgTread(tyres) {
+  var vals = ['lf', 'rf', 'lr', 'rr'].map(function (k) { return tyres[k] && tyres[k].wearPct; }).filter(function (v) { return v != null; });
+  if (!vals.length) return null;
+  return vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+}
+
+// Tyre wear/lap — mirrors the Strategy tab's tyreCalc() formula exactly in
+// shape (average tread lost ÷ laps elapsed), adapted for a live logger:
+// the Strategy tab assumes tyres started at a known 100% (since the person
+// types "laps on" by hand); here we actually have a real reading the
+// moment logging starts, so we anchor to that instead of assuming fresh
+// tyres — otherwise pre-existing wear on a car you connect to mid-stint
+// would get wrongly counted as if it happened during the logged laps.
+//
+// Update cadence depends on whether this car has live tyre data (see
+// telDetectTyreLiveness): a LIVE car recalculates every lap, since fresh
+// readings are always arriving. A snapshot-only car can only get a new
+// real reading by pitting, so recalculating every lap on a frozen number
+// would just be fake, shrinking precision — it only recalculates on each
+// pit-road entry instead, and holds its last value between pit visits.
+function telUpdateWearRate(data) {
+  var avgTread = telAvgTread(data.tyres || {});
+  if (avgTread == null) return;
+  if (telState.tyreWearAtLogStart == null) {
+    telState.tyreWearAtLogStart = avgTread; // baseline, first valid reading since log start
+  }
+
+  // Recompute every tick while actually on pit road (not just the instant
+  // you arrive) — a fresh tyre reading can take a moment to show up even
+  // while parked, so checking only the entering edge risks locking in a
+  // stale number from before the fresh data landed. Overwriting on every
+  // in-pit tick naturally converges on the latest real reading by the
+  // time you leave.
+  var shouldRecompute = telState.lapsSinceLogStart > 0 && (
+    telState.tyreLiveness === 'live' || data.onPitRoad
+  );
+  if (shouldRecompute) {
+    var lost = telState.tyreWearAtLogStart - avgTread;
+    telState.tyreWearPerLap = lost / telState.lapsSinceLogStart;
+  }
+}
+
+function telRenderWearRate() {
+  var el = document.getElementById('telWearRate');
+  if (!el) return;
+  var v = telState.tyreWearPerLap;
+  el.innerHTML = telStatCard('TYRE WEAR /LAP', v != null ? v.toFixed(2) + '%/lap' : '\u2013',
+    v == null ? 'tel-placeholder' : '');
 }
 
 // ── Polling ──────────────────────────────────────────────────────────
@@ -232,14 +338,21 @@ function telPoll() {
       // supports it — see telDetectTyreLiveness).
       telDetectTyreLiveness(data);
       telRenderTyres(data);
+      telUpdateWearRate(data);
+      telRenderWearRate();
       telRenderFuelStats(data);
 
       // Lap-scoped — only redraw when a new lap has actually completed
-      // (or this is the first successful read since Connect).
+      // (or this is the first successful read since Connect/Clear Log).
       if (telState.lastLap === null || data.lap !== telState.lastLap) {
         if (telState.lastLap !== null && data.fuelLevel != null && telState.fuelAtLapStart != null) {
           var used = telState.fuelAtLapStart - data.fuelLevel;
-          if (used > 0) telState.actualFuelPerLap = used;
+          telState.lapLog.push({
+            lapTime: data.lapLastTime != null ? data.lapLastTime : null,
+            fuelUsed: used > 0 ? used : null,
+          });
+          telState.lapsSinceLogStart++;
+          telRenderLogStatus();
         }
         telState.fuelAtLapStart = data.fuelLevel;
         telState.lastLap = data.lap;
@@ -380,25 +493,29 @@ function telRenderStandings(data) {
 function telRenderLapStats(data) {
   var el = document.getElementById('telLapStats');
   if (!el) return;
+  var n = telState.lapLog.length;
+  var avgLap = telAvg(telState.lapLog, 'lapTime');
   el.innerHTML =
     telStatCard('LAST LAP', telFmtLapTime(data.lapLastTime)) +
     telStatCard('BEST LAP', telFmtLapTime(data.lapBestTime), 'tel-good') +
-    telStatCard('AVG LAP', telFmtLapTime(data.lapCurrentTime)); // current-lap avg proxy until we have a real running average
+    telStatCard('AVG LAP' + (n ? ' (' + n + ')' : ''), avgLap != null ? telFmtLapTime(avgLap) : '\u2013',
+                avgLap == null ? 'tel-placeholder' : '');
 }
 
 function telRenderFuelStats(data) {
   var el = document.getElementById('telFuelStats');
   if (!el) return;
+  var n = telState.lapLog.length;
   var target = (typeof rp !== 'undefined' && rp && rp.fuelPerLap) ? rp.fuelPerLap : null;
-  var actual = telState.actualFuelPerLap;
+  var actual = telAvg(telState.lapLog, 'fuelUsed');
   var fuel = data.fuelLevel;
   var lapsLeft = (fuel != null && actual) ? (fuel / actual) : (fuel != null && target ? (fuel / target) : null);
 
   el.innerHTML =
     telStatCard('FUEL LEVEL', fuel != null ? fuel.toFixed(1) + ' L' : '\u2013') +
     telStatCard('TARGET /LAP', target ? target.toFixed(2) + ' L' : '\u2013') +
-    telStatCard('ACTUAL /LAP', actual ? actual.toFixed(2) + ' L' : '\u2013',
-                (target && actual && actual > target) ? 'tel-warn' : '') +
+    telStatCard('ACTUAL /LAP' + (n ? ' (' + n + ')' : ''), actual != null ? actual.toFixed(2) + ' L' : '\u2013',
+                actual == null ? 'tel-placeholder' : ((target && actual > target) ? 'tel-warn' : '')) +
     telStatCard('LAPS LEFT', lapsLeft != null ? lapsLeft.toFixed(1) : '\u2013');
 }
 
