@@ -143,7 +143,7 @@ function telRenderTab() {
         '</div>' +
         '<div id="telHeader" class="tel-header tel-empty"></div>' +
         '<div id="telStandings" class="tel-standings"></div>' +
-        '<div class="tel-yourcar-label">YOUR CAR</div>' +
+        '<div class="tel-yourcar-label">PERFORMANCE</div>' +
         '<div id="telLapStats" class="tel-lapstats"></div>' +
         '<div id="telFuelStats" class="tel-fuelstats"></div>' +
         '<div id="telWearRate" class="tel-wearrate"></div>' +
@@ -613,12 +613,30 @@ function telRenderFuelStats(data) {
   var fuel = data.fuelLevel;
   var lapsLeft = (fuel != null && actual) ? (fuel / actual) : (fuel != null && target ? (fuel / target) : null);
 
+  // ACTUAL/LAP: green at or under target, yellow up to 10% over, red beyond that.
+  var actualClass = '';
+  if (actual != null && target) {
+    var overBy = (actual - target) / target;
+    actualClass = overBy <= 0 ? 'tel-good' : (overBy <= 0.10 ? 'tel-warn' : 'tel-bad');
+  }
+
+  // LAPS LEFT: tied to the Strategy tab's own safety margin (in laps) —
+  // red at or below the margin itself (already into/under your planned
+  // reserve), yellow within double the margin (getting close), green
+  // otherwise. Falls back to no color if the margin isn't available.
+  var lapsLeftClass = '';
+  var margin = (typeof fv === 'function') ? fv('iMargin') : null;
+  if (lapsLeft != null && margin != null && !isNaN(margin)) {
+    lapsLeftClass = lapsLeft <= margin ? 'tel-bad' : (lapsLeft <= margin * 2 ? 'tel-warn' : 'tel-good');
+  }
+
   el.innerHTML =
     telStatCard('FUEL LEVEL', fuel != null ? fuel.toFixed(1) + ' L' : '\u2013') +
     telStatCard('TARGET /LAP', target ? target.toFixed(2) + ' L' : '\u2013') +
     telStatCard('ACTUAL /LAP' + (n ? ' (' + n + ')' : ''), actual != null ? actual.toFixed(2) + ' L' : '\u2013',
-                actual == null ? 'tel-placeholder' : ((target && actual > target) ? 'tel-warn' : '')) +
-    telStatCard('LAPS LEFT', lapsLeft != null ? lapsLeft.toFixed(1) : '\u2013');
+                actual == null ? 'tel-placeholder' : actualClass) +
+    telStatCard('LAPS LEFT', lapsLeft != null ? lapsLeft.toFixed(1) : '\u2013',
+                lapsLeft == null ? '' : lapsLeftClass);
 }
 
 function telStatCard(label, value, extraClass) {
