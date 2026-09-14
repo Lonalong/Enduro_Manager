@@ -5,12 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Enduro Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Telemetry tab: markup + iRacing polling logic, kept out of this file
+     entirely — see telemetry-tab.js. Safe to load this early since it
+     only defines functions/state here; nothing runs until the tab is
+     opened and "Connect to iRacing" is pressed. -->
+<script src="telemetry-tab.js"></script>
 <!-- Used only by the Mini PIP overlay's racing-livery look; everything else
      in the app stays on the system mono stack, so these are non-critical —
      if this can't load (offline at the track, etc.) the Mini PIP falls back
      to 'SF Mono' automatically, just less "condensed dashboard" looking. -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Teko:wght@500;600;700&display=swap">
+<!-- Telemetry tab: kept in its own file (markup, styles, and iRacing
+     polling logic) rather than growing this one — see telemetry-tab.js -->
+<link rel="stylesheet" href="telemetry-tab.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0d0f14;--sf:#151820;--s2:#1c202e;--bd:#2a2f42;--tx:#e8eaf0;--mu:#6b7194;--ac:#4f8ef7;--ye:#f7d44f;--re:#f75f5f;--r:8px;--tg:#3ecf8e;--tw:#ef9f27}
@@ -613,6 +621,7 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   <button class="tab-btn active" data-tab="drivers">Crew</button>
   <button class="tab-btn" data-tab="strategy">Strategy</button>
   <button class="tab-btn" data-tab="race">Race</button>
+  <button class="tab-btn" data-tab="telemetry">Telemetry</button>
 </div>
 
 <!-- ===== STRATEGY TAB ===== -->
@@ -1071,6 +1080,13 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
   <div id="racePageWrap"></div>
 </div>
 <!-- ===== END RACE TAB ===== -->
+
+<!-- ===== TELEMETRY TAB ===== -->
+<!-- Deliberately empty — telemetry-tab.js builds everything inside this
+     on first open (see telRenderTab). Keeps this file from growing every
+     time the Telemetry tab's design changes. -->
+<div class="tab-page" id="tab-telemetry"></div>
+<!-- ===== END TELEMETRY TAB ===== -->
 
 
 <div class="block-modal-overlay" id="blockModal" style="display:none">
@@ -2094,6 +2110,7 @@ document.querySelectorAll('.tab-btn').forEach(function(btn){
     if(this.dataset.tab==='drivers'){renderDriverPage();if(isMobile())mobRenderCrew();}
     if(this.dataset.tab==='strategy'){if(isMobile())mobRenderStrategy();}
     if(this.dataset.tab==='race'){renderRacePage();if(isMobile())mobRenderRace();}
+    if(this.dataset.tab==='telemetry'){if(typeof telOnTabOpened==='function')telOnTabOpened();}
   });
 
   // Bind race page static sync bar buttons once
