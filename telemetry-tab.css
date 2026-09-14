@@ -24,7 +24,22 @@
   font-family: inherit; cursor: pointer;
 }
 .tel-clearlog-btn:hover { background: var(--sf); }
-.tel-log-status { color: var(--mu); font-size: 12px; margin-bottom: 14px; }
+.tel-log-status { color: var(--mu); font-size: 12px; margin-bottom: 8px; }
+
+.tel-push-row { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.tel-push-label { font-size: 12px; color: var(--mu); }
+.tel-push-btn {
+  border: 1px solid var(--bd); color: var(--tx); background: var(--sf);
+  width: 30px; height: 30px; border-radius: 6px; font-size: 13px; font-weight: 900;
+  font-family: inherit; cursor: pointer;
+}
+.tel-push-btn:hover { border-color: var(--ac); color: var(--ac); }
+
+/* Applied to Strategy-tab inputs the instant they're pushed from here —
+   removed automatically the next time the person edits that field
+   themselves, so it only ever means "this came from a push, unedited
+   since." See telArmPushedFieldReset in telemetry-tab.js. */
+.tel-pushed-field { color: var(--ye) !important; }
 .tel-status { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--mu); }
 .tel-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .tel-dot-standby { background: var(--mu); }

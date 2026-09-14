@@ -135,6 +135,12 @@ function telRenderTab() {
           '<div class="tel-status" id="telStatusDot"><span class="tel-dot tel-dot-standby"></span><span>STANDBY</span></div>' +
         '</div>' +
         '<div id="telLogStatus" class="tel-log-status"></div>' +
+        '<div class="tel-push-row">' +
+          '<span class="tel-push-label">Push to Strategy:</span>' +
+          '<button class="tel-push-btn" data-strat="A">A</button>' +
+          '<button class="tel-push-btn" data-strat="B">B</button>' +
+          '<button class="tel-push-btn" data-strat="C">C</button>' +
+        '</div>' +
         '<div id="telHeader" class="tel-header tel-empty"></div>' +
         '<div id="telStandings" class="tel-standings"></div>' +
         '<div class="tel-yourcar-label">YOUR CAR</div>' +
@@ -166,6 +172,9 @@ function telRenderTab() {
 
     document.getElementById('telConnectBtn').addEventListener('click', telToggleConnect);
     document.getElementById('telClearLogBtn').addEventListener('click', telClearLog);
+    document.querySelectorAll('.tel-push-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { telPushToStrategy(btn.dataset.strat); });
+    });
     document.getElementById('telSectorToggle').addEventListener('click', function (e) {
       var opt = e.target.closest('.tel-toggle-opt');
       if (!opt) return;
@@ -319,6 +328,88 @@ function telRenderWearRate() {
     v == null ? 'tel-placeholder' : '');
 }
 
+// ── Push to Strategy ─────────────────────────────────────────────────
+// Writes this session's logged average fuel/lap and current tread
+// readings into a chosen Strategy slot (A/B/C) — directly into the same
+// live inputs a person would type into by hand (iFuel for fuel
+// consumption, flO/flM/flI-style fields for tread, iLapsOn for laps
+// driven), each highlighted yellow until manually edited again. Tread
+// values use the bridge's already side-corrected outer/mid/inner zones —
+// NOT one averaged number tripled into all three, which would throw away
+// the real per-zone detail those fields exist to hold.
+//
+// Pushing into the currently ACTIVE strategy updates the live page (and
+// dispatches real 'input' events so the app's own debounced recalculation
+// picks it up exactly as if the person had typed it). Pushing into a
+// BACKGROUND strategy (not on screen) writes straight into that
+// strategy's saved snapshot instead — never touches the live DOM/globals,
+// since doing so would corrupt whatever the person currently has open.
+function telPushToStrategy(key) {
+  if (typeof strategies === 'undefined' || typeof activeStrategy === 'undefined') {
+    alert('Strategy system not found on this page.'); return; // defensive — shouldn't happen inside the real app
+  }
+  if (!telState.lastData) { alert('Connect to iRacing first.'); return; }
+  if (!telState.lapLog.length) { alert('No laps logged yet \u2014 drive at least one lap after connecting before pushing.'); return; }
+
+  var tyres = telState.lastData.tyres || {};
+  var fieldValues = {}; // input id -> value string
+  [['lf', 'flO', 'flM', 'flI'], ['rf', 'frO', 'frM', 'frI'], ['lr', 'rlO', 'rlM', 'rlI'], ['rr', 'rrO', 'rrM', 'rrI']]
+    .forEach(function (w) {
+      var z = (tyres[w[0]] && tyres[w[0]].wearZones) || {};
+      if (z.outer != null) fieldValues[w[1]] = String(z.outer);
+      if (z.mid != null) fieldValues[w[2]] = String(z.mid);
+      if (z.inner != null) fieldValues[w[3]] = String(z.inner);
+    });
+  if (telState.lapsSinceLogStart > 0) fieldValues.iLapsOn = String(telState.lapsSinceLogStart);
+
+  var avgLapSec = telAvg(telState.lapLog, 'lapTime');
+  if (avgLapSec != null) {
+    var hms = telSecToHMS(avgLapSec);
+    fieldValues.ltH = String(hms.h);
+    fieldValues.ltM = String(hms.m);
+    fieldValues.ltS = String(hms.s);
+  }
+
+  var fuelAvg = telAvg(telState.lapLog, 'fuelUsed');
+  if (fuelAvg != null) fieldValues.iFuel = String(Math.round(fuelAvg * 100) / 100); // replaces planned fuel consumption directly
+
+  if (key === activeStrategy) {
+    Object.keys(fieldValues).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.value = fieldValues[id];
+      el.classList.add('tel-pushed-field');
+      el.dispatchEvent(new Event('input', { bubbles: true })); // triggers the app's own debounced recalc, same as a real keystroke
+      telArmPushedFieldReset(el);
+    });
+    if (typeof run === 'function') run(); // safety net in case zero fields were available to dispatch from
+  } else {
+    if (!strategies[key]) {
+      // Seed a never-used slot from the active strategy's current state —
+      // mirrors how the app's own "copy strategy" feature already handles
+      // this; there's no separate "blank default" concept anywhere else.
+      if (typeof captureStrategy === 'function') captureStrategy(activeStrategy);
+      strategies[key] = JSON.parse(JSON.stringify(strategies[activeStrategy]));
+    }
+    strategies[key].inputs = strategies[key].inputs || {};
+    Object.keys(fieldValues).forEach(function (id) { strategies[key].inputs[id] = fieldValues[id]; });
+  }
+
+  if (typeof currentRaceId !== 'undefined' && currentRaceId && typeof snapshotState === 'function' && typeof saveRaceData === 'function') {
+    saveRaceData(currentRaceId, { _ts: Date.now(), snap: snapshotState() }); // persist immediately, same as the app's other state-changing actions
+  }
+
+  alert('Pushed to Strategy ' + key + (key === activeStrategy ? '.' : ' (not currently open).'));
+}
+
+function telArmPushedFieldReset(el) {
+  var handler = function () {
+    el.classList.remove('tel-pushed-field');
+    el.removeEventListener('input', handler);
+  };
+  el.addEventListener('input', handler); // fires on the NEXT genuine edit, not this push's own dispatch (listener is attached after we dispatch)
+}
+
 // ── Polling ──────────────────────────────────────────────────────────
 
 function telPoll() {
@@ -387,6 +478,17 @@ function telFmtClock(sec) {
 function telFmtDelta(sec) {
   if (sec == null) return '\u2013';
   return (sec >= 0 ? '+' : '') + sec.toFixed(1);
+}
+
+// Splits a total-seconds lap time into the Strategy tab's own ltH/ltM/ltS
+// fields (hours/minutes/seconds), rounding seconds to 1 decimal — matches
+// how lap times are normally shown (e.g. 1:46.8), not falsely over-precise.
+function telSecToHMS(totalSec) {
+  var h = Math.floor(totalSec / 3600);
+  var rem = totalSec - h * 3600;
+  var m = Math.floor(rem / 60);
+  var s = Math.round((rem - m * 60) * 10) / 10;
+  return { h: h, m: m, s: s };
 }
 
 // ── Tyre live-data detection ─────────────────────────────────────────
