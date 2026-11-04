@@ -275,10 +275,9 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .livery-undo-completed{margin-top:14px;font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:11px;letter-spacing:.04em;color:var(--mu);background:transparent;border:1px solid var(--bd);border-radius:5px;padding:5px 12px;cursor:pointer}
 .livery-undo-completed:hover{color:var(--tx);border-color:var(--mu)}
 .livery-final{font-family:'Rajdhani','SF Mono',sans-serif;font-weight:700;font-size:8px;letter-spacing:.08em;color:var(--ye);background:rgba(247,212,79,.15);padding:1px 5px;border-radius:3px;margin-left:6px}
-.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tg);margin-right:5px;flex-shrink:0;box-shadow:0 0 0 0 rgba(62,207,142,.6);animation:live-pulse 1.8s ease-out infinite}
-.live-dot.off{background:var(--re);animation:none;box-shadow:none}
-@keyframes live-pulse{0%{box-shadow:0 0 0 0 rgba(62,207,142,.55)}70%{box-shadow:0 0 0 5px rgba(62,207,142,0)}100%{box-shadow:0 0 0 0 rgba(62,207,142,0)}}
-@media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
+.live-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--tg);margin-right:5px;flex-shrink:0;box-shadow:0 0 4px rgba(62,207,142,.6)}
+/* Static glow, not a looping pulse: an infinite box-shadow animation repaints every frame for the whole race, which costs real CPU/GPU next to iRacing. */
+.live-dot.off{background:var(--re);box-shadow:none}
 .rp-np-unit{font-size:clamp(18px,2vw,32px);color:var(--mu);font-weight:400}
 .rp-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%;flex:1}
 .rp-npb{width:100%;height:100%;background:var(--s2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:inherit;font-size:clamp(17px,2vw,32px);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .1s,color .1s}
@@ -2109,7 +2108,14 @@ document.querySelectorAll('#pipFmtDesktop, #pipFmtMobile, #pipFmtMini').forEach(
     document.getElementById('pipFmtDesktop').classList.toggle('active', pipFormat === 'desktop');
     document.getElementById('pipFmtMobile').classList.toggle('active', pipFormat === 'mobile');
     document.getElementById('pipFmtMini').classList.toggle('active', pipFormat === 'mini');
-    if (pipWindow) { pipWindow.close(); pipWindow = null; popOutRaceCard(); }
+    if (IS_DESKTOP_APP && desktopPipOpen) {
+      window.pywebview.api.close_pip_overlay();
+      desktopPipOpen = false;
+      miniStopPolling();
+      if (pipFormat === 'mini') desktopOpenPipOverlay();
+    } else if (pipWindow) {
+      pipWindow.close(); pipWindow = null; popOutRaceCard();
+    }
   });
 });
 
@@ -4915,6 +4921,56 @@ var _syncStatus = 'offline'; // 'online' | 'offline' | 'syncing'
 var _syncDebounceTimer = null;
 var _realtimeChannel = null;
 
+// ========== DESKTOP APP (pywebview) MODE ==========
+// Set only when this page is running inside the pywebview wrapper
+// (desktop_app.py injects window.pywebview before this script runs).
+// Plain browser users never see this as true, so nothing below changes
+// how the website behaves.
+var IS_DESKTOP_APP = !!window.pywebview;
+// Must match PORT in desktop_app.py — Google blocks its sign-in page
+// from loading inside an embedded webview ("disallowed_useragent"), so
+// on desktop we open that page in the user's real browser instead and
+// have it hand the finished session back to this window over a small
+// local HTTP callback on this same port, instead of redirecting the
+// embedded window itself.
+var DESKTOP_APP_PORT = 53219;
+// Called by desktop_app.py (via evaluate_js) once the system-browser
+// tab has signed in and POSTed its tokens back to the local server.
+async function __applyOAuthSession(access_token, refresh_token) {
+  var sb = getSB();
+  if (!sb) return;
+  var res = await sb.auth.setSession({ access_token: access_token, refresh_token: refresh_token });
+  if (res && res.error) console.warn('Desktop OAuth handoff failed:', res.error.message);
+  // onAuthStateChange (registered in checkAuthAndInit) picks this up
+  // and moves the window off the auth screen on its own.
+}
+// If this particular page load IS the system-browser tab Google just
+// redirected back to (see the signInWithOAuth options below), it is
+// not the desktop app window — it's a plain browser tab whose only
+// job is to grab the session Supabase just parsed from the URL and
+// forward it to the waiting desktop window, then get out of the way.
+if (!IS_DESKTOP_APP && location.search.indexOf('desktop_oauth=1') !== -1) {
+  (function() {
+    var sb = getSB();
+    if (!sb) return;
+    sb.auth.onAuthStateChange(function(event, session) {
+      if (!session) return;
+      fetch('http://127.0.0.1:' + DESKTOP_APP_PORT + '/__oauth_handoff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: session.access_token, refresh_token: session.refresh_token })
+      }).then(function() {
+        document.body.innerHTML = '<div style="font-family:sans-serif;padding:60px;text-align:center;color:#333">' +
+          '<h2>Signed in</h2><p>You can close this tab and go back to Enduro Manager.</p></div>';
+      }).catch(function() {
+        document.body.innerHTML = '<div style="font-family:sans-serif;padding:60px;text-align:center;color:#333">' +
+          '<h2>Signed in, but couldn\'t reach the desktop app</h2>' +
+          '<p>Make sure Enduro Manager is still open, then try signing in again.</p></div>';
+      });
+    });
+  })();
+}
+
 function getSB() {
   if (!_sb && window.supabase) {
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -5018,26 +5074,44 @@ document.addEventListener('DOMContentLoaded', function() {
       var sb = getSB();
       if (!sb) return;
       googleBtn.disabled = true;
-      var res = await sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + window.location.pathname,
-          // Without this, Google silently reuses whatever Google account is
-          // already active in the browser instead of showing the account
-          // picker — which makes it look like "Continue with Google" can't
-          // switch accounts. Forcing the chooser every time fixes that.
-          queryParams: { prompt: 'select_account' }
+      var oauthOptions = {
+        redirectTo: window.location.origin + window.location.pathname,
+        // Without this, Google silently reuses whatever Google account is
+        // already active in the browser instead of showing the account
+        // picker — which makes it look like "Continue with Google" can't
+        // switch accounts. Forcing the chooser every time fixes that.
+        queryParams: { prompt: 'select_account' }
+      };
+      if (IS_DESKTOP_APP) {
+        // Google refuses to show its sign-in page inside an embedded
+        // webview at all, so don't let signInWithOAuth navigate this
+        // window there. Instead get the URL back without redirecting
+        // (skipBrowserRedirect), hand it to desktop_app.py to open in
+        // the user's real browser, and point Google's redirect at our
+        // local server (?desktop_oauth=1) so that browser tab can send
+        // the finished session back here instead of displaying it.
+        oauthOptions.skipBrowserRedirect = true;
+        oauthOptions.redirectTo = 'http://127.0.0.1:' + DESKTOP_APP_PORT + '/?desktop_oauth=1';
+      }
+      var res = await sb.auth.signInWithOAuth({ provider: 'google', options: oauthOptions });
+      if (IS_DESKTOP_APP && res && res.data && res.data.url && window.pywebview && window.pywebview.api) {
+        window.pywebview.api.open_external(res.data.url);
+        if (msg) {
+          msg.textContent = 'Continue in the browser window that just opened…';
+          msg.style.color = '#6b7194';
         }
-      });
+      }
       if (res && res.error) {
         googleBtn.disabled = false;
         if (msg) {
           msg.textContent = 'Error: ' + res.error.message;
           msg.style.color = '#f75f5f';
         }
+      } else if (IS_DESKTOP_APP) {
+        googleBtn.disabled = false;
       }
-      // On success, Google redirects the whole page away — no further
-      // action needed here.
+      // Browser-mode success: Google redirects the whole page away — no
+      // further action needed here.
     });
   }
 });
@@ -6735,8 +6809,52 @@ renderDriverPage=function(){
 // ========== PIP OVERLAY (current stint card, popped into its own window) ==========
 var pipWindow = null;
 var pipFormat = 'desktop'; // 'desktop' | 'mobile' | 'mini'
+// Tracks the native frameless overlay window (desktop app, Mini format
+// only) — separate from pipWindow above, which is the browser's
+// documentPictureInPicture popout used everywhere else.
+var desktopPipOpen = false;
+
+// Mini format on desktop skips documentPictureInPicture entirely (see
+// desktop_app.py's Api.open_pip_overlay comment for why) and instead
+// asks Python to open a second native window.
+async function desktopOpenPipOverlay() {
+  if (!rp.calcStints.length) { alert('Sync from Strategy first, then pop out the overlay.'); return; }
+  if (!window.pywebview || !window.pywebview.api) return;
+  await window.pywebview.api.open_pip_overlay();
+  desktopPipOpen = true;
+  miniStartPolling();
+  syncPipCard();
+}
+
+// Called from desktop_app.py (via evaluate_js) when the person closes
+// the overlay window from its own close button.
+window.__desktopPipClosed = function () {
+  desktopPipOpen = false;
+  if (pipFormat === 'mini') miniStopPolling();
+};
+
+// Called from desktop_app.py (via evaluate_js) when a click inside the
+// overlay window (tyre toggle, undo) needs to run against the real
+// race state, which only exists here in the main window.
+window.__desktopPipAction = function (action) {
+  if (action === 'tyre') miniToggleTyre();
+  else if (action === 'undo') rpHandleUndo();
+  else if (action === 'undoCompleted') rpUndoRaceComplete();
+};
 
 async function popOutRaceCard() {
+  if (IS_DESKTOP_APP) {
+    if (pipFormat === 'mini') { desktopOpenPipOverlay(); return; }
+    // Desktop/Mobile pop-out formats rely on the browser's
+    // documentPictureInPicture API (below), which doesn't work inside
+    // the embedded WebView2 window this app runs in at all — not even
+    // the "needs Chrome or Edge" fallback alert is accurate here, since
+    // WebView2 IS Chromium-based and still can't do it. Only Mini has a
+    // native desktop-app version (see desktopOpenPipOverlay above), so
+    // say that plainly instead of silently doing nothing.
+    alert('Only the Mini overlay pops out in the desktop app right now — switch to Mini format above.\n\nDesktop and Mobile pop-out still work in the regular browser version of Enduro Manager.');
+    return;
+  }
   if (!('documentPictureInPicture' in window)) {
     alert('Pop-out overlay needs Chrome or Edge (Document Picture-in-Picture isn\'t supported in this browser).');
     return;
@@ -6852,6 +6970,14 @@ async function popOutRaceCard() {
 }
 
 function syncPipCard() {
+  // Push to the native overlay window regardless of whether a browser
+  // documentPictureInPicture popout (pipWindow) also happens to be open
+  // — the two are mutually exclusive in practice (desktop Mini never
+  // opens a pipWindow, see popOutRaceCard above) but each path is
+  // independent of the other either way.
+  if (pipFormat === 'mini' && IS_DESKTOP_APP && desktopPipOpen && window.pywebview && window.pywebview.api) {
+    window.pywebview.api.push_pip_state(buildMiniPipHTML());
+  }
   if (!pipWindow) return;
   var host = pipWindow.document.getElementById('pipCardHost');
   if (!host) return;
