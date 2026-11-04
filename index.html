@@ -258,6 +258,12 @@ tbody tr.sr.sel td:first-child{border-left:3px solid var(--ac)}
 .livery-tag.solo{text-align:center}
 .livery-tag.solo .livery-tag-lbl{justify-content:center}
 .livery-tag.stale .livery-tag-val{color:var(--mu)}
+/* Row of tags: each column sizes to its own content (never wraps a label onto 2 lines), labels all start on the same line */
+.livery-tags{gap:8px;justify-content:space-between;align-items:flex-start}
+.livery-tags .livery-tag:not(.solo){flex:0 1 auto}
+.livery-tag-lbl{white-space:nowrap}
+.livery-tag.expected .livery-tag-lbl{font-size:12px;color:var(--tx);letter-spacing:.06em}
+.livery-tag.expected .livery-tag-val{font-size:34px}
 .livery-tyre{display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:8px;font-family:'Rajdhani','SF Mono',sans-serif;font-weight:600;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--mu);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
 .livery-tyre:hover{color:var(--tx)}
 .livery-tyre.on:hover{color:#c97bf7}
@@ -7172,6 +7178,12 @@ function miniUndoHTML() {
     : '';
 }
 
+function miniExpHTML(text, maxPx, chars) {
+  var n = chars || String(text).length;
+  var px = Math.max(14, Math.min(maxPx, Math.floor(74 / (0.54 * n))));
+  return '<span style="font-size:' + px + 'px">' + text + '</span>';
+}
+
 function buildMiniPipHTML() {
   if (rp.raceCompleted) {
     return '<div class="livery-win"><div class="livery-hdr"><span class="livery-title">Pit Wall</span></div>'
@@ -7210,9 +7222,13 @@ function buildMiniPipHTML() {
   var prevS = si > 0 ? rp.calcStints[si - 1] : null;
   var expVal;
   if (!prevS) { expVal = '<span style="color:var(--mu)">&mdash;</span>'; }
-  else if (prevS.isM) { expVal = String(prevS.end); }
-  else if (prevS.ep !== null && prevS.lp !== null) { expVal = '<span style="font-size:17px">' + prevS.ep + '&ndash;' + prevS.lp + '</span>'; }
-  else { expVal = String(prevS.end); }
+  // Expected is the biggest number on the card, so shrink it as it gets longer
+  // (3-digit laps / ranges like 112-118 in long races) so it always stays
+  // inside its column instead of running into Actual. ~0.54em per char is a
+  // deliberately wide estimate; the real condensed font only fits easier.
+  else if (prevS.isM) { expVal = miniExpHTML(String(prevS.end), 34); }
+  else if (prevS.ep !== null && prevS.lp !== null) { expVal = miniExpHTML(prevS.ep + '&ndash;' + prevS.lp, 24, String(prevS.ep).length + 1 + String(prevS.lp).length); }
+  else { expVal = miniExpHTML(String(prevS.end), 34); }
 
   var prevNum = s.num - 1;
   var tcOn = rp.calcTyreChange[prevNum] || false;
@@ -7236,7 +7252,7 @@ function buildMiniPipHTML() {
   if (pulledFuelStr !== undefined) {
     var fuel = parseFloat(pulledFuelStr) || 0;
     var addVal = Math.max(0, s.fwm - fuel);
-    fuelCell = '<div class="livery-tag fuel"><div class="livery-tag-lbl"><span class="live-dot"></span>Fuel Left</div><div class="livery-tag-val">' + fuel.toFixed(1) + 'L</div></div>';
+    fuelCell = '<div class="livery-tag fuel"><div class="livery-tag-lbl"><span class="live-dot"></span>Fuel Left</div><div class="livery-tag-val"' + (fuel.toFixed(1).length >= 5 ? ' style="font-size:17px"' : '') + '>' + fuel.toFixed(1) + 'L</div></div>';
     heroVal = '<div class="livery-hero-val">' + Math.ceil(addVal) + '<span class="u">L</span></div>';
   } else {
     fuelCell = '<div class="livery-tag fuel stale"><div class="livery-tag-lbl"><span class="live-dot off"></span>Fuel Left</div><div class="livery-tag-val">&mdash;</div></div>';
