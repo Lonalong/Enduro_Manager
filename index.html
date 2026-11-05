@@ -4971,6 +4971,11 @@ document.addEventListener('keydown', function(e) {
     // app, then it doubles as Undo for the most recent GO (rpHandleUndo is
     // already a no-op on stint 1, so no extra guard needed here).
     e.preventDefault();
+    // A held key repeats keydown — one press must be one undo.
+    if (e.repeat) return;
+    // With the Mini open and the bridge answering, the bridge's global
+    // Backspace is what undoes; doing it here too would undo twice per press.
+    if (typeof miniPollTimer !== 'undefined' && miniPollTimer && miniBridgeUp) return;
     rpHandleUndo();
   }
 });
@@ -7149,6 +7154,7 @@ function bindPipCard(host) {
 // rp.calcStints / rpPrefillPitLap / rpPrefillFuelInCar / rp.calcTyreChange
 // the Desktop and Mobile overlays use — this just displays less of it.
 var miniBridgeState = { connected: false, hotkey: null };
+var miniBridgeUp = false; // true while the last bridge poll got an answer
 var miniPollTimer = null;
 
 function miniStartPolling() {
@@ -7159,6 +7165,7 @@ function miniStartPolling() {
 
 function miniStopPolling() {
   if (miniPollTimer) { clearInterval(miniPollTimer); miniPollTimer = null; }
+  miniBridgeUp = false;
 }
 
 function miniPollOnce() {
@@ -7168,6 +7175,7 @@ function miniPollOnce() {
     .then(function (r) { return r.json(); })
     .then(function (data) {
       clearTimeout(to);
+      miniBridgeUp = true;
       var wasConnected = !!(miniBridgeState && miniBridgeState.connected);
       miniBridgeState = data || { connected: false, hotkey: null };
       var hotkey = miniBridgeState.hotkey;
@@ -7185,6 +7193,7 @@ function miniPollOnce() {
     })
     .catch(function () {
       clearTimeout(to);
+      miniBridgeUp = false;
       var wasConnected = !!(miniBridgeState && miniBridgeState.connected);
       miniBridgeState = { connected: false, hotkey: null };
       if (wasConnected) syncPipCard();
