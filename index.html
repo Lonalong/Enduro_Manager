@@ -3200,6 +3200,15 @@ function rpResetRace() {
   rp._goHistory = [];
   rpBuildCalcStints();
   renderRacePage();
+  // Put the plan back to what the race was synced from (manual pit laps,
+  // tyre changes, fuel-save stints), not a plain automatic plan. Only when
+  // the race page was synced from a strategy in the first place.
+  var _src = rp.syncedStrategy;
+  if (_src && rp.syncedAt) {
+    withStrategy(_src, function () { rpSyncFromStrategy(_src); });
+    if (typeof updateRaceStratUI === 'function') updateRaceStratUI();
+    if (isMobile()) mobRenderRace();
+  }
   if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
   setTimeout(function(){
     var el = document.getElementById('rpCard1');
