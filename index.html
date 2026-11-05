@@ -2295,7 +2295,7 @@ function rpUndoRaceComplete() {
   syncPipCard();
 }
 
-function rpBuildCalcStints() {
+function rpBuildStintList() {
   var fl = rp.fuelPerLap, tnk = rp.tankCapacity, mrg = rp.margin;
   // Use the live fuel/lap rate (planned until real data comes in, then the
   // measured actual rate) for stint length too — so once real consumption
@@ -2306,7 +2306,7 @@ function rpBuildCalcStints() {
   var sf = (rp.startFuel !== undefined && rp.startFuel !== null) ? rp.startFuel : tnk;
   var firstMaxSL = fl > 0 ? Math.max(1, Math.floor((sf - mrg) / fl)) : maxSL;
   var tot = rp.totalLaps;
-  if (!fl || !tnk || tot < 1 || maxSL < 1) { rp.calcStints = []; return; }
+  if (!fl || !tnk || tot < 1 || maxSL < 1) { return []; }
 
   var out = [], lap = 1, num = 1;
   var saveFl = fv('pcSaveFuelUse') || 0;
@@ -2331,17 +2331,7 @@ function rpBuildCalcStints() {
       var mvi = parseInt(mv);
       // For driven stints use strict bounds; for future stints accept any valid lap
       var maxLap = num < rp.currentStint ? ae : tot - 1;
-      if (!isNaN(mvi) && mvi >= st) {
-        end = mvi; isM = true;
-        // A stint that's already been driven (or whose pit lap is being
-        // entered right now) is always followed by another stint — that's
-        // what the pit stop was FOR. If the entered pit lap lands at or
-        // past the planned race distance, stretch the plan just enough to
-        // keep that next stint alive, instead of ending the stint list
-        // early and leaving the Race page pointing at a stint that no
-        // longer exists (blank/stuck page, GO and hotkeys doing nothing).
-        if (num < rp.currentStint && end >= totB) totB = end + 1;
-      }
+      if (!isNaN(mvi) && mvi >= st) { end = mvi; isM = true; }
     }
     var laps = end - st + 1;
     var actualFplData = rp.actualFuelPerLap[num];
@@ -2354,9 +2344,9 @@ function rpBuildCalcStints() {
     // reaches the actual race distance (tot) — the +1 buffer only matters for
     // auto-projected future stints, which still plan against totB so they
     // never exceed tank capacity.
-    var isLast = isM ? (end >= tot && num >= rp.currentStint) : (end >= totB);
+    var isLast = isM ? (end >= tot) : (end >= totB);
     out.push({ num: num, st: st, end: end, ae: ae, laps: laps, fuel: fuel, fwm: fwm, ep: null, lp: null, isLast: isLast, isM: isM, isSave: isSave });
-    if (isM && end >= tot && num >= rp.currentStint) break; // real data confirms the race is done here — don't project a phantom stint after it
+    if (isM && end >= tot) break; // real data confirms the race is done here — don't project a phantom stint after it
     lap = end + 1; num++;
   }
   var n = out.length;
@@ -2368,8 +2358,10 @@ function rpBuildCalcStints() {
     out[n - 2].ep = Math.min(Math.max(out[n - 2].st, totB - maxSL), out[n - 2].end);
     out[n - 2].lp = out[n - 2].end;
   }
-  rp.calcStints = out;
+  return out;
+}
 
+function rpApplyTyres(out) {
   rp.calcTyreChange = {};
   if (rp.wearPerLap > 0) {
     var base = 100, lsc = 0, warn = fv('iWarn');
@@ -2382,6 +2374,58 @@ function rpBuildCalcStints() {
       else { lsc += s.laps; }
     });
   }
+}
+
+
+// Pit laps that are typed (or pulled with S) but not yet confirmed with GO.
+// They are valid only if numeric and within the race; the Race tab previews
+// them on the stint card being edited, never on the later cards.
+function rpPendingKeys() {
+  var ks = [];
+  Object.keys(rp.pendingPit).forEach(function (k) {
+    var pv = parseInt(rp.pendingPit[k]);
+    if (isNaN(pv) || pv > rp.totalLaps + 1) return;
+    var mv = rp.manPits[k];
+    if (mv !== undefined && mv !== '' && parseInt(mv) !== pv) return; // a locked actual pit lap wins
+    ks.push(parseInt(k));
+  });
+  return ks;
+}
+
+// Builds rp.calcStints. Confirmed pit laps (manPits) shape the whole plan.
+// A pending pit lap is previewed across the whole plan, so every card is live
+// and the list stays consistent. The stint before it keeps the original plan's pit figures in .plan so
+// "Expected pit" does not move while typing.
+function rpBuildCalcStints() {
+  var pend = rpPendingKeys();
+  var saved = {};
+  pend.forEach(function (k) { saved[k] = rp.manPits[k]; delete rp.manPits[k]; });
+  var base = rpBuildStintList();           // plan with confirmed laps only
+  var out = base;
+  if (pend.length && base.length) {
+    pend.forEach(function (k) { rp.manPits[k] = parseInt(rp.pendingPit[k]); });
+    var prev = rpBuildStintList();         // plan with pending laps applied
+    var cut = Math.max.apply(null, pend) + 1;
+    out = prev;
+    var kStint = out.filter(function (x) { return x.num === cut - 1; })[0];
+    var bk = base.filter(function (x) { return x.num === cut - 1; })[0];
+    if (kStint && bk) kStint.plan = { end: bk.end, ep: bk.ep, lp: bk.lp, isM: bk.isM };
+    pend.forEach(function (k) { if (saved[k] === undefined) delete rp.manPits[k]; else rp.manPits[k] = saved[k]; });
+  } else {
+    pend.forEach(function (k) { if (saved[k] !== undefined) rp.manPits[k] = saved[k]; });
+  }
+  if (!out.length) { rp.calcStints = []; return; }
+  rp.calcStints = out;
+  rpApplyTyres(out);
+}
+
+// Expected-pit figures for the stint that ends at the pit being typed:
+// the original plan's, not the preview's.
+function rpExpStint(prevS) {
+  if (!prevS || !prevS.plan) return prevS;
+  var c = {}; for (var k in prevS) c[k] = prevS[k];
+  c.end = prevS.plan.end; c.ep = prevS.plan.ep; c.lp = prevS.plan.lp; c.isM = prevS.plan.isM;
+  return c;
 }
 
 // Tread at end of stint si (0-indexed) in rp.calcStints
@@ -2408,38 +2452,6 @@ function rpTreadAtStart(si) {
   return Math.max(0, base - lsc * rp.wearPerLap);
 }
 
-// A pit lap that's been typed / pulled with S but not confirmed with GO is
-// only PENDING: it must never move the plan (Expected pit laps, upcoming
-// stints), which only re-plans once GO locks the actual lap in. The one
-// thing that does depend on it is the stint you're about to drive — its own
-// laps and fuel required (the final stint's fuel need changes with where
-// you actually pitted, and that's the number you refuel by). This returns
-// that stint as it WILL be once its pending lap is locked, computed on the
-// side: rp.calcStints / rp.manPits / rp.calcTyreChange are left untouched,
-// so every surface (main page, Mini, Desktop/Mobile pop-outs) agrees.
-function rpPendingStint(sn) {
-  var base = rp.calcStints.find(function (x) { return x.num === sn; });
-  if (!base || sn < 2) return base;
-  var pitKey = sn - 1;
-  var raw = rp.pendingPit[pitKey];
-  if (raw === undefined) return base;
-  var x = parseInt(raw);
-  if (isNaN(x) || x > rp.totalLaps + 1) return base;
-  var savedMan = rp.manPits[pitKey], savedCalc = rp.calcStints, savedTyre = rp.calcTyreChange;
-  var out = base;
-  try {
-    rp.manPits[pitKey] = x;
-    rpBuildCalcStints();
-    var f = rp.calcStints.find(function (y) { return y.num === sn; });
-    if (f) out = f;
-  } finally {
-    if (savedMan !== undefined) rp.manPits[pitKey] = savedMan; else delete rp.manPits[pitKey];
-    rp.calcStints = savedCalc;
-    rp.calcTyreChange = savedTyre;
-  }
-  return out;
-}
-
 // Prefill for actual pit lap numpad — pendingPit if user typed, else prevS.end, blank if window
 function rpPrefillPitLap(s, si) {
   if (s.num === 1) return '';
@@ -2450,16 +2462,6 @@ function rpPrefillPitLap(s, si) {
   if (!prevS) return '';
   if (prevS.ep !== null && prevS.lp !== null) return '';
   return String(prevS.end);
-}
-
-// An actual fuel/lap reading far outside the live rate almost always means
-// a wrong pit lap or fuel entry (not real consumption) — don't let it
-// overwrite the rate, since 0 or a huge value makes every stint calculation
-// fail and blanks the whole Race page.
-function rpFplSane(x) {
-  if (!(x > 0) || !isFinite(x)) return false;
-  if (!(rp.fuelPerLap > 0)) return true;
-  return x >= rp.fuelPerLap * 0.25 && x <= rp.fuelPerLap * 4;
 }
 
 function rpPrefillFuelInCar(s) {
@@ -2497,10 +2499,16 @@ function rpFillFromIRacing(sn) {
       var fuel = Math.max(0, data.fuelLevel);
       rp.actualFuelInCar[sn] = fuel.toFixed(1);
       if (pitKey >= 1) {
-        // Pending only — the plan (Expected, upcoming stints) re-plans on GO.
         rp.pendingPit[pitKey] = String(lap);
+        // Same live-preview trick the numpad uses: briefly lock it in as
+        // manPits so this render shows the resulting laps/donuts/fuel-add
+        // figures, then release it back to "pending" — GO is still what
+        // actually confirms it.
+        var savedManPit = rp.manPits[pitKey];
+        rp.manPits[pitKey] = lap;
         rpBuildCalcStints();
         renderRacePage();
+        if (savedManPit !== undefined) rp.manPits[pitKey] = savedManPit; else delete rp.manPits[pitKey];
       } else {
         rpBuildCalcStints();
         renderRacePage();
@@ -2529,7 +2537,8 @@ function renderRacePage() {
   var fplDiv = document.getElementById('rpFplDisplay');
   if (fplDiv) {
     var drivenCount = Object.keys(rp.actualFuelPerLap).length;
-    var actualFpl = drivenCount > 0 ? rp.fuelPerLap : null;
+    var actualFpl = null;
+    if (drivenCount > 0) { var _tl = 0, _tf = 0; Object.keys(rp.actualFuelPerLap).forEach(function(k){ var d = rp.actualFuelPerLap[parseInt(k)]; if (d && d.laps && d.fuel) { _tl += d.laps; _tf += d.fuel; } }); actualFpl = _tl > 0 ? r2(_tf / _tl) : null; }
     var stratFpl = fv('iFuel');
     var fplColor = actualFpl === null ? 'var(--mu)' : actualFpl <= stratFpl ? 'var(--tg)' : 'var(--ye)';
     fplDiv.innerHTML = '<div class="rp-sync-status">Last synced: <span style="color:var(--tx)" id="rpSyncedAt">' + (rp.syncedAt || 'Not yet synced') + '</span></div>'
@@ -2557,7 +2566,6 @@ function renderRacePage() {
   }
 
   var cards = rp.calcStints.map(function (s, si) {
-    s = rpPendingStint(s.num); // this stint's own laps/fuel with any pending pit lap; plan untouched
     var isNow = s.num === viewNum;
     var isDone = s.num < rp.currentStint;
     var isActualNow = s.num === rp.currentStint;
@@ -2652,7 +2660,7 @@ function renderRacePage() {
     if (s.num === 1 || si === 0) {
       pitWinHTML = '<div class="rp-pw-val" style="color:var(--mu)">—</div><div class="rp-pw-sub">Race start</div>';
     } else {
-      var prevS = rp.calcStints[si - 1];
+      var prevS = rpExpStint(rp.calcStints[si - 1]);
       if (prevS && prevS.isM) {
         pitWinHTML = '<div class="rp-pw-val">' + prevS.end + '</div><div class="rp-pw-sub">Manual pit</div>';
       } else if (prevS && prevS.ep !== null && prevS.lp !== null) {
@@ -2855,19 +2863,30 @@ function renderRacePage() {
       if (np === 'pit') {
         var pitKey = sn - 1;
         var cur = rp.pendingPit[pitKey] !== undefined ? String(rp.pendingPit[pitKey]) : '';
+        var refreshLiveCards = function() {
+          rp.calcStints.forEach(function(st, stIdx) {
+            var startDonut = document.getElementById('rpDonutStart' + st.num);
+            var endDonut = document.getElementById('rpDonutEnd' + st.num);
+            var startTread = rpTreadAtStart(stIdx);
+            var endTread = rpTreadAtEnd(stIdx);
+            if (startDonut && startTread !== null) startDonut.outerHTML = '<span id="rpDonutStart' + st.num + '">' + rpDonutSVG(startTread, 100) + '</span>';
+            if (endDonut && endTread !== null) endDonut.outerHTML = '<span id="rpDonutEnd' + st.num + '">' + rpDonutSVG(endTread, 100) + '</span>';
+            var lapsEl = document.getElementById('rpStintLaps' + st.num);
+            if (lapsEl) lapsEl.textContent = st.laps;
+            var estEl2 = document.getElementById('rpEstLaps' + st.num);
+            if (estEl2) {
+              var estLaps2 = rp.fuelPerLap > 0 ? Math.floor(st.fwm / rp.fuelPerLap) : st.laps;
+              estEl2.innerHTML = 'Est. <span class="rp-est-laps-n">' + estLaps2 + '</span> laps';
+            }
+          });
+        };
         if (k === 'del') {
           delete rp.pendingPit[pitKey];
+          rpBuildCalcStints(); // rebuild so prefill reflects correct prevS.end
+          refreshLiveCards(); // and reset donuts/laps/est. laps back to default
         } else if (cur.length < 3) {
           rp.pendingPit[pitKey] = cur + k;
         }
-        // The typed pit lap stays PENDING: it never moves the plan (Expected pit
-        // laps, upcoming stints) — that only re-plans on GO. Re-render so this
-        // stint's own laps / fuel required / add-to-car reflect the typed lap
-        // (see rpPendingStint) and the Mini / pop-outs stay in step.
-        rpBuildCalcStints();
-        renderRacePage();
-        // The re-render just rebuilt the numpad, so re-apply the typed value's
-        // display state (typed vs. prefill look, red when out of range).
         var dispEl = document.getElementById('rpValPit' + sn);
         var dispBox = document.getElementById('rpDispPit' + sn);
         if (dispEl) {
@@ -2875,8 +2894,10 @@ function renderRacePage() {
           if (!s2) return;
           var si2 = rp.calcStints.indexOf(s2);
           var pitVal = rp.pendingPit[pitKey] !== undefined ? parseInt(rp.pendingPit[pitKey]) : null;
-          dispEl.textContent = rp.pendingPit[pitKey] !== undefined ? String(rp.pendingPit[pitKey]) : rpPrefillPitLap(s2, si2);
+          var pitPrefill = rpPrefillPitLap(s2, si2);
+          dispEl.textContent = rp.pendingPit[pitKey] !== undefined ? String(rp.pendingPit[pitKey]) : pitPrefill;
           dispEl.style.opacity = rp.pendingPit[pitKey] !== undefined ? '1' : '0.45';
+          // Validate same as strategy: invalid if < st or >= ae of previous stint
           if (pitVal !== null && dispBox) {
             var prevS2 = si2 > 0 ? rp.calcStints[si2 - 1] : null;
             var invalid = prevS2 && (pitVal < prevS2.st || pitVal > rp.totalLaps + 1);
@@ -2886,6 +2907,19 @@ function renderRacePage() {
             dispBox.style.borderColor = '';
             dispBox.style.color = '';
           }
+        }
+        // Temporarily apply pendingPit to rebuild stints and update donuts,
+        // laps, and est. laps live — a pit lap change can shift more than
+        // just this card (it moves the boundary with the previous stint),
+        // so every currently-rendered card gets refreshed, not just this one.
+        if (rp.pendingPit[pitKey] !== undefined && !isNaN(parseInt(rp.pendingPit[pitKey])) && parseInt(rp.pendingPit[pitKey]) <= rp.totalLaps + 1) {
+          var savedManPit = rp.manPits[pitKey];
+          rp.manPits[pitKey] = parseInt(rp.pendingPit[pitKey]);
+          rpBuildCalcStints();
+          refreshLiveCards();
+          // Restore — don't lock until GO
+          if (savedManPit !== undefined) rp.manPits[pitKey] = savedManPit;
+          else delete rp.manPits[pitKey];
         }
       } else {
         var cur2 = rp.actualFuelInCar[sn] !== undefined ? String(rp.actualFuelInCar[sn]) : '';
@@ -2940,7 +2974,7 @@ function renderRacePage() {
 
 // Update fuel add display live
 function rpUpdateFuelAdd(sn) {
-  var s = rpPendingStint(sn);
+  var s = rp.calcStints.find(function(x){ return x.num === sn; });
   if (!s) return;
   var fuelInCar = rp.actualFuelInCar[sn] !== undefined ? parseFloat(rp.actualFuelInCar[sn]) || 0 : parseFloat(rpPrefillFuelInCar(s)) || 0;
   var add = Math.max(0, s.fwm - fuelInCar);
@@ -2971,26 +3005,6 @@ function rpHandleGo(sn) {
     if (prevStint && (isNaN(pv) || pv < prevStint.st || pv > rp.totalLaps + 1)) return;
   }
 
-  // The pit lap being locked in right now can itself change which stint is
-  // the final one — pitting later than planned (outside the expected
-  // window) can leave only this stint's worth of race still to run. Check
-  // that against the stints as they'll look once this pit lap is applied,
-  // not the pre-GO list, or GO advances past a stint that no longer
-  // exists and the Race page is left with no NOW card.
-  var forceLast = false;
-  if (!s.isLast && pitKey >= 1) {
-    var pvNow = parseInt(pitLapVal);
-    if (!isNaN(pvNow)) {
-      var savedMP = rp.manPits[pitKey];
-      rp.manPits[pitKey] = pvNow;
-      rpBuildCalcStints();
-      var freshS = rp.calcStints.find(function(x){ return x.num === sn; });
-      forceLast = !!(freshS && freshS.isLast);
-      if (savedMP !== undefined) rp.manPits[pitKey] = savedMP; else delete rp.manPits[pitKey];
-      rpBuildCalcStints();
-    }
-  }
-
   // Push a snapshot of everything this GO press is about to mutate — both
   // Undo paths (regular stint-back and race-complete) pop and restore from
   // this stack, one level per GO press, rather than trying to compute which
@@ -3009,7 +3023,7 @@ function rpHandleGo(sn) {
   });
 
   // For last stint: use pending pit if set, otherwise fall back to prefilled value
-  if (s.isLast || forceLast) {
+  if (s.isLast) {
     var pitKey0 = sn - 1;
     var pitVal0 = rp.pendingPit[pitKey0] !== undefined
       ? rp.pendingPit[pitKey0]
@@ -3032,15 +3046,13 @@ function rpHandleGo(sn) {
         var lapsDriven0 = actualPitLap0 - prevPitLap0;
         var fuelLoaded0 = prevS0.num === 1 ? rp.startFuel : prevS0.fwm;
         var fuelUsed0 = fuelLoaded0 - lastFuelInCar;
-        if (lapsDriven0 > 0 && fuelUsed0 > 0 && rpFplSane(fuelUsed0 / lapsDriven0)) {
+        if (lapsDriven0 > 0 && fuelUsed0 > 0) {
           rp.actualFuelPerLap[prevS0.num] = { laps: lapsDriven0, fuel: fuelUsed0 };
           var totalLaps0 = 0, totalFuel0 = 0;
           Object.keys(rp.actualFuelPerLap).forEach(function(k3){
             totalLaps0 += rp.actualFuelPerLap[parseInt(k3)].laps || 0;
             totalFuel0 += rp.actualFuelPerLap[parseInt(k3)].fuel || 0;
           });
-          var nfpl0 = totalLaps0 > 0 ? r2(totalFuel0 / totalLaps0) : 0;
-          if (nfpl0 > 0) rp.fuelPerLap = nfpl0;
         }
       }
     }
@@ -3073,7 +3085,7 @@ function rpHandleGo(sn) {
       var lapsDriven = actualPitLap - prevPitLap;
       var fuelLoaded = prevS.num === 1 ? rp.startFuel : prevS.fwm;
       var fuelUsed = fuelLoaded - fuelInCar;
-      if (lapsDriven > 0 && fuelUsed > 0 && rpFplSane(fuelUsed / lapsDriven)) {
+      if (lapsDriven > 0 && fuelUsed > 0) {
         rp.actualFuelPerLap[prevS.num] = { laps: lapsDriven, fuel: fuelUsed };
         // Total fuel/lap = total fuel used / total laps driven across all recorded stints
         var totalLaps = 0, totalFuel = 0;
@@ -3081,8 +3093,6 @@ function rpHandleGo(sn) {
           totalLaps += rp.actualFuelPerLap[parseInt(k2)].laps || 0;
           totalFuel += rp.actualFuelPerLap[parseInt(k2)].fuel || 0;
         });
-        var nfpl = totalLaps > 0 ? r2(totalFuel / totalLaps) : 0;
-        if (nfpl > 0) rp.fuelPerLap = nfpl;
       }
     }
   }
@@ -3092,11 +3102,6 @@ function rpHandleGo(sn) {
   }
   rp.viewStint = null;
   rpBuildCalcStints();
-  // Safety net: never leave the NOW pointer on a stint that doesn't exist.
-  if (rp.calcStints.length && rp.currentStint > rp.calcStints.length && !rp.raceCompleted) {
-    rp.currentStint = rp.calcStints.length;
-    rpBuildCalcStints();
-  }
   renderRacePage();
   if(currentRaceId){var _snap=snapshotState();saveRaceData(currentRaceId,{_ts:Date.now(),snap:_snap});}
   setTimeout(function(){
@@ -3167,7 +3172,6 @@ function rpHandleUndo() {
     var d = rp.actualFuelPerLap[parseInt(k)];
     if (d && d.laps && d.fuel) { tl += d.laps; tf += d.fuel; hasData = true; }
   });
-  rp.fuelPerLap = hasData && tl > 0 ? r2(tf / tl) : fv('iFuel');
 
   // Go back one stint
   rp.currentStint = isOnLast ? lastGoSn - 1 : lastGoSn;
@@ -3219,7 +3223,7 @@ function rpSyncFromStrategy(fromKey) {
   var savedPendingPit = rp.pendingPit;
   var savedActualFuelInCar = rp.actualFuelInCar;
   var savedActualFuelPerLap = rp.actualFuelPerLap;
-  var savedFuelPerLap = Object.keys(rp.actualFuelPerLap).length > 0 ? rp.fuelPerLap : fl;
+  var savedFuelPerLap = fl; // plan always uses the planned fuel/lap; actual is display only
 
   // Update strategy-derived values
   rp.fuelPerLap = savedFuelPerLap;
@@ -6588,7 +6592,6 @@ function mobRenderRace(){
   }
 
   stints.forEach(function(s,si){
-    s=rpPendingStint(s.num); // pending pit lap affects only this stint's own laps/fuel
     var isNow=(s.num===viewNum);
     var isActualNow=(s.num===rp.currentStint);
     var isDone=(s.num<rp.currentStint);
@@ -6625,7 +6628,7 @@ function mobRenderRace(){
     }
 
     // S2+ card
-    var prevS=si>0?stints[si-1]:null;
+    var prevS=si>0?rpExpStint(stints[si-1]):null;
     var pitWin,pitWinSub;
     if(!prevS){pitWin='—';pitWinSub='Race start';}
     else if(prevS.isM){pitWin=String(prevS.end);pitWinSub='Manual pit';}
@@ -6695,6 +6698,9 @@ function mobSwitchMode(el){
   var sn=parseInt(el.dataset.sn),mode=el.dataset.mode;
   mobNpMode[sn]=mode;
   var pitKey0=sn-1;
+  var savedManPitSwitch=rp.manPits[pitKey0];
+  var hasPendingPit0=rp.pendingPit[pitKey0]!==undefined&&!isNaN(parseInt(rp.pendingPit[pitKey0]))&&parseInt(rp.pendingPit[pitKey0])<=rp.totalLaps+1;
+  if(hasPendingPit0){rp.manPits[pitKey0]=parseInt(rp.pendingPit[pitKey0]);rpBuildCalcStints();}
   var s=rp.calcStints.find(function(x){return x.num===sn;});
   var si=rp.calcStints.indexOf(s);
   var val=mode==='pit'?rpPrefillPitLap(s,si):rpPrefillFuelInCar(s);
@@ -6705,6 +6711,10 @@ function mobSwitchMode(el){
   el.parentNode.querySelectorAll('.m-np-tab').forEach(function(t){t.className='m-np-tab'+(t.dataset.mode===mode?' '+(mode==='pit'?'pit-on':'fuel-on'):'');});
   var disp=g('mnpd'+sn);
   if(disp){disp.style.borderColor=col;disp.style.color=col;disp.style.opacity=hasUserVal?'1':'0.45';disp.innerHTML=val+' <span style="font-size:13px;color:var(--mu)">'+unit+'</span>';}
+  if(hasPendingPit0){
+    if(savedManPitSwitch!==undefined)rp.manPits[pitKey0]=savedManPitSwitch;
+    else delete rp.manPits[pitKey0];
+  }
   // Show/hide confirm button
   var conf=g('mconf'+sn);
   if(mode==='pit'&&!conf){
@@ -6718,8 +6728,7 @@ function mobNpKey(sn,k){
   var mode=mobNpMode[sn]||'pit';
   var pitKey=sn-1;
   var refreshMobLiveCards=function(){
-    rp.calcStints.forEach(function(st0,stIdx){
-      var st=rpPendingStint(st0.num); // pending pit lap affects only that stint's own laps/fuel
+    rp.calcStints.forEach(function(st,stIdx){
       var lapsEl=g('mlaps'+st.num);if(lapsEl)lapsEl.textContent=st.laps;
       var lapsEndEl=g('mlapsend'+st.num);if(lapsEndEl)lapsEndEl.textContent='→ end L'+st.end;
       var freqEl=g('mfreq'+st.num);
@@ -6751,15 +6760,31 @@ function mobNpKey(sn,k){
     var displayVal=rp.pendingPit[pitKey]!==undefined?String(rp.pendingPit[pitKey]):rpPrefillPitLap(s2,si2);
     disp.style.opacity=rp.pendingPit[pitKey]!==undefined?'1':'0.45';
     disp.innerHTML=displayVal+' <span style="font-size:13px;color:var(--mu)">lap</span>';
-    // Pending only — the plan re-plans on GO. Refresh this stint's own numbers.
-    rpBuildCalcStints();
-    refreshMobLiveCards();
+    if(k==='del'){
+      rpBuildCalcStints(); // rebuild so prefill/laps/fuel reflect correct default
+      refreshMobLiveCards();
+    } else if(rp.pendingPit[pitKey]!==undefined&&!isNaN(parseInt(rp.pendingPit[pitKey]))&&parseInt(rp.pendingPit[pitKey])<=rp.totalLaps+1){
+      var savedManPitMob2=rp.manPits[pitKey];
+      rp.manPits[pitKey]=parseInt(rp.pendingPit[pitKey]);
+      rpBuildCalcStints();
+      refreshMobLiveCards();
+      // Restore — don't lock until GO
+      if(savedManPitMob2!==undefined)rp.manPits[pitKey]=savedManPitMob2;
+      else delete rp.manPits[pitKey];
+    }
   } else {
     var curF=rp.actualFuelInCar[sn]!==undefined?String(rp.actualFuelInCar[sn]):'';
     if(k==='del'){delete rp.actualFuelInCar[sn];curF='';}
     else if(k==='.'){if(curF.indexOf('.')<0&&curF.length>0){rp.actualFuelInCar[sn]=curF+'.';curF=curF+'.';}}
     else{var di=curF.indexOf('.');if(di>=0&&curF.length-di>1)return;if(curF.length<5){rp.actualFuelInCar[sn]=curF+k;curF=curF+k;}}
-    var s3=rpPendingStint(sn);
+    // Re-apply any pending (unconfirmed) pit lap before reading stint data —
+    // without this, switching to the fuel keypad after previewing a pit lap
+    // would read stale/default stint data instead of the preview the pit
+    // keypad was just showing, making it look like the preview "reverted."
+    var savedManPitFuel=rp.manPits[pitKey];
+    var hasPendingPit=rp.pendingPit[pitKey]!==undefined&&!isNaN(parseInt(rp.pendingPit[pitKey]))&&parseInt(rp.pendingPit[pitKey])<=rp.totalLaps+1;
+    if(hasPendingPit){rp.manPits[pitKey]=parseInt(rp.pendingPit[pitKey]);rpBuildCalcStints();}
+    var s3=rp.calcStints.find(function(x){return x.num===sn;});
     var displayFuel=rp.actualFuelInCar[sn]!==undefined?String(rp.actualFuelInCar[sn]):rpPrefillFuelInCar(s3);
     disp.style.opacity=rp.actualFuelInCar[sn]!==undefined?'1':'0.45';
     disp.innerHTML=displayFuel+' <span style="font-size:13px;color:var(--mu)">L</span>';
@@ -6768,6 +6793,11 @@ function mobNpKey(sn,k){
       var addEl=g('madd'+sn);if(addEl)addEl.innerHTML=Math.ceil(Math.max(0,s3.fwm-fNum))+'<span style="font-size:15px;color:var(--mu)"> L</span>';
       var estEl2=g('mest'+sn);
       if(estEl2){var estLaps2=fNum>0?Math.floor(fNum/rp.fuelPerLap):(rp.fuelPerLap>0?Math.floor(s3.fwm/rp.fuelPerLap):s3.laps);estEl2.textContent=estLaps2;}
+    }
+    if(hasPendingPit){
+      refreshMobLiveCards(); // keep every other card showing the same preview it already was
+      if(savedManPitFuel!==undefined)rp.manPits[pitKey]=savedManPitFuel;
+      else delete rp.manPits[pitKey];
     }
   }
 }
@@ -7047,7 +7077,18 @@ function bindPipCard(host) {
         var cur = rp.pendingPit[pitKey] !== undefined ? String(rp.pendingPit[pitKey]) : '';
         if (k === 'del') { delete rp.pendingPit[pitKey]; }
         else if (cur.length < 3) { rp.pendingPit[pitKey] = cur + k; }
-        // Pending only — the plan re-plans on GO (see rpPendingStint).
+        // Temporarily apply the pending value so the re-render below reflects
+        // it live (laps, est. laps, donuts) — same as the main window — then
+        // revert immediately after, since it isn't locked in until GO.
+        if (rp.pendingPit[pitKey] !== undefined && !isNaN(parseInt(rp.pendingPit[pitKey])) && parseInt(rp.pendingPit[pitKey]) <= rp.totalLaps + 1) {
+          var savedManPitPip = rp.manPits[pitKey];
+          rp.manPits[pitKey] = parseInt(rp.pendingPit[pitKey]);
+          rpBuildCalcStints();
+          renderRacePage();
+          if (savedManPitPip !== undefined) rp.manPits[pitKey] = savedManPitPip;
+          else delete rp.manPits[pitKey];
+          return;
+        }
       } else {
         var cur2 = rp.actualFuelInCar[sn] !== undefined ? String(rp.actualFuelInCar[sn]) : '';
         if (k === 'del') { rp.actualFuelInCar[sn] = undefined; }
@@ -7206,7 +7247,6 @@ function buildMiniPipHTML() {
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
   if (!s) return '';
   var si = rp.calcStints.indexOf(s);
-  s = rpPendingStint(s.num); // same pending-aware stint the main page shows
 
   // ---- S1: laps to run + fuel on board only, same as the real S1 card ----
   if (s.num === 1) {
@@ -7231,7 +7271,7 @@ function buildMiniPipHTML() {
   // need Expected/Actual/Fuel to actually execute that last pit — so this
   // does the same: a small FINAL badge, not a blank/replaced card. Only
   // rp.raceCompleted (checked above) means genuinely nothing left to do.
-  var prevS = si > 0 ? rp.calcStints[si - 1] : null;
+  var prevS = si > 0 ? rpExpStint(rp.calcStints[si - 1]) : null;
   var expVal;
   if (!prevS) { expVal = '<span style="color:var(--mu)">&mdash;</span>'; }
   // Expected is the biggest number on the card, so shrink it as it gets longer
@@ -7315,7 +7355,6 @@ function pipBuildMobileCardHTML() {
   var s = rp.calcStints.find(function (x) { return x.num === rp.currentStint; });
   if (!s) return '';
   var si = rp.calcStints.indexOf(s);
-  s = rpPendingStint(s.num); // same pending-aware stint the main page shows
   var dIdx = stintDrivers[s.num] || 0, dName = drivers[dIdx] || '';
   var col = (driverMeta && driverMeta[dIdx] && driverMeta[dIdx].color) ? driverMeta[dIdx].color : PAL[(s.num - 1) % PAL.length];
   var dIR = members.filter(function (m) { return m.role === 'Driver'; })[dIdx];
@@ -7336,7 +7375,7 @@ function pipBuildMobileCardHTML() {
     return html;
   }
 
-  var prevS = si > 0 ? rp.calcStints[si - 1] : null;
+  var prevS = si > 0 ? rpExpStint(rp.calcStints[si - 1]) : null;
   var pitWin, pitWinSub;
   if (!prevS) { pitWin = '—'; pitWinSub = 'Race start'; }
   else if (prevS.isM) { pitWin = String(prevS.end); pitWinSub = 'Manual pit'; }
@@ -7411,7 +7450,18 @@ function bindPipMobileCard(host) {
         var cur = rp.pendingPit[prevNum] !== undefined ? String(rp.pendingPit[prevNum]) : '';
         if (k === 'del') { delete rp.pendingPit[prevNum]; }
         else if (cur.length < 3) { rp.pendingPit[prevNum] = cur + k; }
-        // Pending only — the plan re-plans on GO (see rpPendingStint).
+        // Temporarily apply the pending value so the re-render below reflects
+        // it live (laps, est. laps, donuts) — same as the main window — then
+        // revert immediately after, since it isn't locked in until GO.
+        if (rp.pendingPit[prevNum] !== undefined && !isNaN(parseInt(rp.pendingPit[prevNum])) && parseInt(rp.pendingPit[prevNum]) <= rp.totalLaps + 1) {
+          var savedManPitMob = rp.manPits[prevNum];
+          rp.manPits[prevNum] = parseInt(rp.pendingPit[prevNum]);
+          rpBuildCalcStints();
+          renderRacePage();
+          if (savedManPitMob !== undefined) rp.manPits[prevNum] = savedManPitMob;
+          else delete rp.manPits[prevNum];
+          return;
+        }
       } else {
         var curF = rp.actualFuelInCar[sn] !== undefined ? String(rp.actualFuelInCar[sn]) : '';
         if (k === 'del') { delete rp.actualFuelInCar[sn]; }
@@ -7420,6 +7470,20 @@ function bindPipMobileCard(host) {
           var di = curF.indexOf('.');
           if (di >= 0 && curF.length - di > 1) return;
           if (curF.length < 5) rp.actualFuelInCar[sn] = curF + k;
+        }
+        // Re-apply any pending (unconfirmed) pit lap before rebuilding —
+        // without this, every fuel keystroke rebuilds from the true,
+        // reverted manPits and silently discards whatever pit lap preview
+        // was already confirmed but not yet locked in with GO.
+        var hasPendingPitFuel = rp.pendingPit[prevNum] !== undefined && !isNaN(parseInt(rp.pendingPit[prevNum])) && parseInt(rp.pendingPit[prevNum]) <= rp.totalLaps + 1;
+        if (hasPendingPitFuel) {
+          var savedManPitFuel2 = rp.manPits[prevNum];
+          rp.manPits[prevNum] = parseInt(rp.pendingPit[prevNum]);
+          rpBuildCalcStints();
+          renderRacePage();
+          if (savedManPitFuel2 !== undefined) rp.manPits[prevNum] = savedManPitFuel2;
+          else delete rp.manPits[prevNum];
+          return;
         }
       }
       rpBuildCalcStints();
